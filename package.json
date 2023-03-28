@@ -1,5 +1,5 @@
 {
-  "name": "ens-misctools3",
+  "name": "ens-misctools",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,9 +9,21 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "next": "13.2.4",
-    "react": "18.2.0",
-    "react-dom": "18.2.0"
+    "@adraffy/ens-normalize": "^1.9.0",
+    "@ensdomains/thorin": "^0.6.4",
+    "@rainbow-me/rainbowkit": "^0.12.4",
+    "big-integer": "^1.6.51",
+    "buffer": "^6.0.3",
+    "ethers": "5.7.2",
+    "js-sha3": "^0.8.0",
+    "next": "^12.2.0",
+    "next-plausible": "^3.2.0",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
+    "react-hot-toast": "^2.4.0",
+    "react-transition-state": "^1.1.4",
+    "styled-components": "^5.3.9",
+    "wagmi": "^0.12.7"
   },
   "devDependencies": {
     "eslint": "8.36.0",
