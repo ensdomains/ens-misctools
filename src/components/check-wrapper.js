@@ -249,18 +249,6 @@ export default function CheckWrapper({
           More information here: <a href="https://support.ens.domains/dev-basics/namewrapper/expiry">Expiry</a>
         </p>
       }
-      parentExpiryTagInfo.tag = 'Expiring Soon'
-        parentExpiryTagInfo.tagColor = 'yellowSecondary'
-        parentExpiryTagInfo.tagTooltip = 'This parent name is expiring soon.'
-        parentExpiryTagInfo.tagTooltipDialog = <p>
-          It will expire on {parentExpiry}.
-          <br/><br/>
-          A name&apos;s expiry can only be set, at maximum, to the expiry of the parent name. If the parent name &quot;{bestParentDisplayName}&quot; expires, so will the name &quot;{bestDisplayName}&quot;.
-          <br/><br/>
-          The parent name must be extended/renewed first, before the child name can be extended.
-          <br/><br/>
-          More information here: <a href="https://support.ens.domains/dev-basics/namewrapper/expiry">Expiry</a>
-        </p>
     }
   }
 

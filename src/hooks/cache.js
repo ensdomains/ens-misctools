@@ -18,7 +18,7 @@ export default function useCache(key, keyData, doUpdateAsync, onUpdateSuccess, o
   const result = useSWR({key, keyData}, update, {
     dedupingInterval: 0,
     loadingTimeout: 500,
-    revalidateOnFocus: false,
+    revalidateOnFocus: true,
     onSuccess: ({keyData, timeoutId, result}) => {
       onUpdateSuccess(result, keyData)
       setLoadDelayReached(false)
