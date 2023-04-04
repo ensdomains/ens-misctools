@@ -24,10 +24,10 @@ export default function Check() {
         <title>ENS Misc Tools - Check Name</title>
         <link rel="icon" href="/favicon.ico" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="description" content="Check the current status of an ENS name"/>
+        <meta name="description" content="Quick dashboard for normalization, expiry, parent expiry, resolver, wrapped state, and subnames"/>
         <meta property="og:title" content="ENS Misc Tools - Check Name"/>
-        <meta property="og:description" content="Check the current status of an ENS name"/>
-        <meta property="og:image" content="/sharing.png"/>
+        <meta property="og:description" content="Quick dashboard for normalization, expiry, parent expiry, resolver, wrapped state, and subnames"/>
+        <meta property="og:image" content="/sharing-check.png"/>
         <meta property="twitter:card" content="summary_large_image"/>
         <meta property="twitter:creator" content="@serenae_fansubs"/>
       </Head>
