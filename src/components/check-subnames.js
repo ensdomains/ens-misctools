@@ -2,10 +2,11 @@ import styles from '../styles/Check.module.css'
 import { Card, Heading, Typography } from '@ensdomains/thorin'
 import RecordItemRow from './recorditemrow'
 import { ensConfig } from '../lib/constants'
-import { normalize, parseName, hasExpiry, parseExpiry } from '../lib/utils'
+import { validChain, normalize, parseName, hasExpiry, parseExpiry } from '../lib/utils'
 import useCache from '../hooks/cache'
-import { useState } from 'react'
-import { useNetwork, useProvider } from 'wagmi'
+import { useChain } from '../hooks/misc'
+import { useState, useEffect } from 'react'
+import { useProvider } from 'wagmi'
 import { goerli } from '@wagmi/core/chains'
 import { ethers } from 'ethers'
 import { MulticallWrapper } from 'ethers-multicall-provider'
@@ -14,11 +15,19 @@ import toast from 'react-hot-toast'
 export default function CheckSubnames({
   name
 }) {
+  const [renderNetworkData, setRenderNetworkData] = useState({})
   const [nameData, setNameData] = useState(defaultNameData())
   const provider = useProvider()
-  const { chain, chains } = useNetwork()
+  const { chain, chains } = useChain(provider)
+  
+  useEffect(() => {
+    setRenderNetworkData({
+      hasProvider: !!chain,
+      isChainSupported: validChain(chain, chains)
+    })
+  }, [chain])
 
-  const doUpdate = async ({name}) => {
+  const doUpdate = async ({name, chain}) => {
     const nameData = defaultNameData();
 
     if (name) {
@@ -27,22 +36,22 @@ export default function CheckSubnames({
         normalizedName
       } = normalize(name)
 
-      if (isNameValid && chains.some((c) => c.id === chain?.id)) {
+      if (isNameValid && validChain(chain, chains)) {
         const {
           node,
         } = parseName(normalizedName)
 
         try {
           const multi = MulticallWrapper.wrap(provider)
-          const registry = new ethers.Contract(ensConfig[chain?.id].Registry?.address, ensConfig[chain?.id].Registry?.abi, multi)
-          const nameWrapper = new ethers.Contract(ensConfig[chain?.id].NameWrapper?.address, ensConfig[chain?.id].NameWrapper?.abi, multi)
+          const registry = new ethers.Contract(ensConfig[chain].Registry?.address, ensConfig[chain].Registry?.abi, multi)
+          const nameWrapper = new ethers.Contract(ensConfig[chain].NameWrapper?.address, ensConfig[chain].NameWrapper?.abi, multi)
 
           // TODO: Switch off hosted service
           let offset = 0
           let limit = 100
           let done = false
           while (!done) {
-            const response = await fetch(`https://api.thegraph.com/subgraphs/name/ensdomains/ens${chain?.id === goerli.id ? 'goerli' : ''}`, {
+            const response = await fetch(`https://api.thegraph.com/subgraphs/name/ensdomains/ens${chain === goerli.id ? 'goerli' : ''}`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({query: `query {domain(id:"${node}"){subdomains(orderBy:labelhash,first:${limit},skip:${offset}){id labelName labelhash}}}`})
@@ -98,7 +107,7 @@ export default function CheckSubnames({
     setNameData(nameData)
   }
 
-  const cache = useCache('check-subnames-update', {name}, doUpdate, onUpdateSuccess, onUpdateError)
+  const cache = useCache('check-subnames-update', {name, chain}, doUpdate, onUpdateSuccess, onUpdateError)
 
   let showLoading = cache.showLoading
   if (cache.data && cache.data.keyData.name !== name) {
@@ -111,7 +120,7 @@ export default function CheckSubnames({
     bestDisplayName
   } = normalize(name)
 
-  if (isNameValid && chains.some((c) => c.id === chain?.id) && !nameData.loaded) {
+  if (isNameValid && validChain(chain, chains) && !nameData.loaded) {
     showLoading = true
   }
 
@@ -121,13 +130,13 @@ export default function CheckSubnames({
 
   let subnameRows = <></>
 
-  if (!showLoading) {
+  if (!showLoading && validChain(chain, chains)) {
     subnameRows = nameData.subdomains.map((subdomain, index) => {
       const stateTagInfo = {}
       const expiryTagInfo = {}
 
       if (subdomain.wrapperData) {
-        const nameWrapperAddress = ensConfig[chain?.id]?.NameWrapper?.address
+        const nameWrapperAddress = ensConfig[chain]?.NameWrapper?.address
         const isEmancipated = (subdomain.wrapperData.fuses & 65536) === 65536
         const isLocked = (subdomain.wrapperData.fuses & 1) === 1
         const expiryStr = parseExpiry(subdomain.wrapperData.expiry)
@@ -205,9 +214,15 @@ export default function CheckSubnames({
     <div className={styles.containerMiddleCol}>
       <Card>
         <Heading>Subnames</Heading>
-        {isNameValid && level >= 2 ?
+        {!renderNetworkData.hasProvider ? (
+          !renderNetworkData.isChainSupported ? (
+            <Typography>No web3 provider connected.</Typography>
+          ) : (
+            <Typography>Switch to a supported network.</Typography>
+          )
+        ) : isNameValid && level >= 2 ?
           (showLoading ? (<>
-            <Typography>Loading subnames for &quot;{bestDisplayName}&quot;...</Typography>
+            <Typography>Loading subnames...</Typography>
             <table className={styles.itemTable}>
               <tbody>
                 <RecordItemRow loading={showLoading}/>
@@ -221,13 +236,13 @@ export default function CheckSubnames({
                 </tbody>
               </table>
             </>) : (<>
-              <Typography>No subnames found under &quot;{bestDisplayName}&quot;.</Typography>
+              <Typography>No subnames found.</Typography>
             </>)
           )
         ) : isNameValid ? (
-          <Typography>Skipping subname checks for &quot;{bestDisplayName}&quot;.<br/>Search for a second-level domain or lower to check subnames.</Typography>
+          <Typography>Skipping subname checks.<br/>Search for a second-level domain<br/>or lower to check subnames.</Typography>
         ) : name && (
-          <Typography>Skipping subname checks for invalid name &quot;{bestDisplayName}&quot;.</Typography>
+          <Typography>Skipping subname checks for invalid name.</Typography>
         )}
       </Card>
     </div>

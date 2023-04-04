@@ -1,23 +1,32 @@
 import styles from '../styles/Check.module.css'
-import { Card, Heading } from '@ensdomains/thorin'
+import { Card, Heading, Typography } from '@ensdomains/thorin'
 import RecordItemRow from './recorditemrow'
 import Fusebox from './fusebox'
 import { ensConfig } from '../lib/constants'
-import { normalize, parseName, hasExpiry, parseExpiry } from '../lib/utils'
+import { validChain, normalize, parseName, hasExpiry, parseExpiry } from '../lib/utils'
 import useCache from '../hooks/cache'
-import { useState } from 'react'
-import { useNetwork, useProvider } from 'wagmi'
+import { useChain } from '../hooks/misc'
+import { useState, useEffect } from 'react'
+import { useProvider } from 'wagmi'
 import { ethers } from 'ethers'
 import toast from 'react-hot-toast'
 
 export default function CheckWrapper({
   name
 }) {
+  const [renderNetworkData, setRenderNetworkData] = useState({})
   const [nameData, setNameData] = useState(defaultNameData())
   const provider = useProvider()
-  const { chain, chains } = useNetwork()
+  const { chain, chains } = useChain(provider)
 
-  const doUpdate = async ({name}) => {
+  useEffect(() => {
+    setRenderNetworkData({
+      hasProvider: !!chain,
+      isChainSupported: validChain(chain, chains)
+    })
+  }, [chain])
+
+  const doUpdate = async ({name, chain}) => {
     const nameData = defaultNameData();
 
     if (name) {
@@ -26,7 +35,7 @@ export default function CheckWrapper({
         normalizedName
       } = normalize(name)
 
-      if (isNameValid && chains.some((c) => c.id === chain?.id)) {
+      if (isNameValid && validChain(chain, chains)) {
         const {
           node,
           wrappedTokenId,
@@ -39,18 +48,18 @@ export default function CheckWrapper({
         } = parseName(parentName)
 
         // Get registry owner
-        const registry = new ethers.Contract(ensConfig[chain?.id].Registry?.address, ensConfig[chain?.id].Registry?.abi, provider)
+        const registry = new ethers.Contract(ensConfig[chain].Registry?.address, ensConfig[chain].Registry?.abi, provider)
         const registryOwner = await registry.owner(node)
         nameData.registryOwner = registryOwner
         const parentRegistryOwner = await registry.owner(parentNode)
         nameData.parentRegistryOwner = parentRegistryOwner
 
-        const nameWrapperAddress = ensConfig[chain?.id].NameWrapper?.address
+        const nameWrapperAddress = ensConfig[chain].NameWrapper?.address
         nameData.isWrapped = registryOwner === nameWrapperAddress
         nameData.isParentWrapped = parentRegistryOwner === nameWrapperAddress
 
         // Get wrapped data
-        const nameWrapper = new ethers.Contract(nameWrapperAddress, ensConfig[chain?.id].NameWrapper?.abi, provider)
+        const nameWrapper = new ethers.Contract(nameWrapperAddress, ensConfig[chain].NameWrapper?.abi, provider)
         const data = await nameWrapper.getData(wrappedTokenId)
         if (data && data.owner) {
           nameData.wrappedOwner = data.owner
@@ -79,7 +88,7 @@ export default function CheckWrapper({
     setNameData(defaultNameData())
   }
 
-  const cache = useCache('check-wrapper-update', {name}, doUpdate, onUpdateSuccess, onUpdateError)
+  const cache = useCache('check-wrapper-update', {name, chain}, doUpdate, onUpdateSuccess, onUpdateError)
 
   let showLoading = cache.showLoading
   if (cache.data && cache.data.keyData.name !== name) {
@@ -105,7 +114,7 @@ export default function CheckWrapper({
   let parentExpiry = ''
   const parentExpiryTagInfo = {}
 
-  if (!showLoading && nameData.registryOwner && nameData.wrappedOwner) {
+  if (!showLoading && validChain(chain, chains) && nameData.registryOwner && nameData.wrappedOwner) {
     parentExpiry = parseExpiry(nameData.parentExpiry)
 
     function setStateInfo(name, stateTagInfo, isParent, registryOwner, wrappedOwner, fuses, expiry) {
@@ -128,7 +137,7 @@ export default function CheckWrapper({
         stateTagInfo.tagColor = 'blueSecondary'
         stateTagInfo.tagTooltip = 'The root node is Locked as a special case in the Name Wrapper.'
       } else if (wrappedOwner === ethers.constants.AddressZero) {
-        const nameWrapperAddress = ensConfig[chain?.id].NameWrapper?.address
+        const nameWrapperAddress = ensConfig[chain].NameWrapper?.address
         if (registryOwner === ethers.constants.AddressZero || registryOwner === nameWrapperAddress) {
           if (registryOwner === nameWrapperAddress) {
             stateTagInfo.tag = 'Unregistered / Expired'
@@ -259,14 +268,22 @@ export default function CheckWrapper({
     <div className={styles.containerMiddleCol}>
       <Card>
         <Heading>Name Wrapper</Heading>
-        <table className={styles.itemTable}>
-          <tbody>
-            <RecordItemRow loading={showLoading} label="Name" value={isNameValid && bestDisplayName} {...stateTagInfo}/>
-            <RecordItemRow loading={showLoading} label="Parent" value={bestParentDisplayName || (isNameValid ? '[root]' : '')} {...parentStateTagInfo}/>
-            <RecordItemRow loading={showLoading} label="Parent" subLabel="Expiry" value={parentExpiry} {...parentExpiryTagInfo}/>
-          </tbody>
-        </table>
-        <Fusebox loading={showLoading} name={bestDisplayName} fuses={nameData.fuses}/>
+        {!renderNetworkData.hasProvider ? (
+          !renderNetworkData.isChainSupported ? (
+            <Typography>No web3 provider connected.</Typography>
+          ) : (
+            <Typography>Switch to a supported network.</Typography>
+          )
+        ) : (<>
+          <table className={styles.itemTable}>
+            <tbody>
+              <RecordItemRow loading={showLoading} label="Name" value={isNameValid && bestDisplayName} {...stateTagInfo}/>
+              <RecordItemRow loading={showLoading} label="Parent" value={bestParentDisplayName || (isNameValid ? '[root]' : '')} {...parentStateTagInfo}/>
+              <RecordItemRow loading={showLoading} label="Parent" subLabel="Expiry" value={parentExpiry} {...parentExpiryTagInfo}/>
+            </tbody>
+          </table>
+          <Fusebox loading={showLoading} name={bestDisplayName} fuses={nameData.fuses}/>
+        </>)}
       </Card>
     </div>
   )

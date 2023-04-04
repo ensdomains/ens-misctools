@@ -2,26 +2,21 @@ import styles from '../../styles/Check.module.css'
 import Head from 'next/head'
 import { useState } from 'react'
 import { Heading, Input, Card } from '@ensdomains/thorin'
-import { useAccount, useNetwork, useProvider } from 'wagmi'
 import Header from '../../components/header'
 import CheckNormalization from '../../components/check-normalization'
 import CheckGeneral from '../../components/check-general'
 import CheckWrapper from '../../components/check-wrapper'
 import CheckSubnames from '../../components/check-subnames'
-import { useSetupRouterPush, useSetupDelayedName } from '../../lib/utils'
+import { useRouterPush, useDelayedName } from '../../hooks/misc'
 import { Toaster } from 'react-hot-toast'
 
 export default function Check() {
   const [name, setName] = useState('')
   const [delayedName, setDelayedName] = useState('')
 
-  const onNameChange = useSetupRouterPush('/check/', setName)
+  const onNameChange = useRouterPush('/check/', setName)
 
-  useSetupDelayedName(name, setDelayedName)
-
-  const provider = useProvider()
-  const { chain, chains } = useNetwork()
-  const { address } = useAccount()
+  useDelayedName(name, setDelayedName)
 
   return (
     <>

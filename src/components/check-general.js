@@ -1,11 +1,12 @@
 import styles from '../styles/Check.module.css'
-import { EthSVG, Heading } from '@ensdomains/thorin'
+import { EthSVG, Heading, Typography } from '@ensdomains/thorin'
 import RecordItemRow from './recorditemrow'
 import { ensConfig } from '../lib/constants'
-import { normalize, parseName, shortAddr, parseExpiry } from '../lib/utils'
+import { validChain, normalize, parseName, shortAddr, parseExpiry } from '../lib/utils'
 import useCache from '../hooks/cache'
-import { useState } from 'react'
-import { useNetwork, useProvider } from 'wagmi'
+import { useChain } from '../hooks/misc'
+import { useState, useEffect } from 'react'
+import { useProvider } from 'wagmi'
 import { goerli } from '@wagmi/core/chains'
 import { ethers } from 'ethers'
 import toast from 'react-hot-toast'
@@ -13,11 +14,19 @@ import toast from 'react-hot-toast'
 export default function CheckGeneral({
   name
 }) {
+  const [renderNetworkData, setRenderNetworkData] = useState({})
   const [nameData, setNameData] = useState(defaultNameData())
   const provider = useProvider()
-  const { chain, chains } = useNetwork()
+  const { chain, chains } = useChain(provider)
 
-  const doUpdate = async ({name}) => {
+  useEffect(() => {
+    setRenderNetworkData({
+      hasProvider: !!chain,
+      isChainSupported: validChain(chain, chains)
+    })
+  }, [chain])
+
+  const doUpdate = async ({name, chain}) => {
     const nameData = defaultNameData();
 
     if (name) {
@@ -26,7 +35,7 @@ export default function CheckGeneral({
         normalizedName
       } = normalize(name)
 
-      if (isNameValid && chains.some((c) => c.id === chain?.id)) {
+      if (isNameValid && validChain(chain, chains)) {
         const {
           node,
           labelhash,
@@ -36,7 +45,7 @@ export default function CheckGeneral({
         } = parseName(normalizedName)
 
         // Get registry owner
-        const registry = new ethers.Contract(ensConfig[chain?.id].Registry?.address, ensConfig[chain?.id].Registry?.abi, provider)
+        const registry = new ethers.Contract(ensConfig[chain].Registry?.address, ensConfig[chain].Registry?.abi, provider)
         const registryOwner = await registry.owner(node)
         nameData.manager = registryOwner
         
@@ -45,13 +54,13 @@ export default function CheckGeneral({
 
         if (isETH2LD) {
           // Get registrar owner
-          const ethRegistrar = new ethers.Contract(ensConfig[chain?.id].ETHRegistrar?.address, ensConfig[chain?.id].ETHRegistrar?.abi, provider)
+          const ethRegistrar = new ethers.Contract(ensConfig[chain].ETHRegistrar?.address, ensConfig[chain].ETHRegistrar?.abi, provider)
           try {
             nameData.owner = await ethRegistrar.ownerOf(eth2LDTokenId)
           } catch (e) {
             try {
               // TODO: Switch off hosted service
-              const response = await fetch(`https://api.thegraph.com/subgraphs/name/ensdomains/ens${chain?.id === goerli.id ? 'goerli' : ''}`, {
+              const response = await fetch(`https://api.thegraph.com/subgraphs/name/ensdomains/ens${chain === goerli.id ? 'goerli' : ''}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({query: `query {registration(id:"${labelhash}"){registrant{id}}}`})
@@ -67,12 +76,12 @@ export default function CheckGeneral({
           nameData.expiry = await ethRegistrar.nameExpires(eth2LDTokenId)
         }
 
-        const nameWrapperAddress = ensConfig[chain?.id].NameWrapper?.address
+        const nameWrapperAddress = ensConfig[chain].NameWrapper?.address
         nameData.isWrapped = registryOwner === nameWrapperAddress
 
         if (nameData.isWrapped) {
           // Get wrapped data
-          const nameWrapper = new ethers.Contract(nameWrapperAddress, ensConfig[chain?.id].NameWrapper?.abi, provider)
+          const nameWrapper = new ethers.Contract(nameWrapperAddress, ensConfig[chain].NameWrapper?.abi, provider)
           const data = await nameWrapper.getData(wrappedTokenId)
           if (data && data.owner) {
             nameData.owner = data.owner
@@ -100,7 +109,7 @@ export default function CheckGeneral({
           // Test if resolver is wrapper aware
           // Best guess for now is if it supports the new approval methods
           try {
-            const resolverContract = new ethers.Contract(nameData.resolver, ensConfig[chain?.id].LatestPublicResolver?.abi, provider)
+            const resolverContract = new ethers.Contract(nameData.resolver, ensConfig[chain].LatestPublicResolver?.abi, provider)
             if (!(await resolverContract.isApprovedForAll(ethers.constants.AddressZero, ethers.constants.AddressZero))) {
               nameData.isResolverWrapperAware = true
             }
@@ -125,7 +134,7 @@ export default function CheckGeneral({
     setNameData(defaultNameData())
   }
 
-  const cache = useCache('check-general-update', {name}, doUpdate, onUpdateSuccess, onUpdateError)
+  const cache = useCache('check-general-update', {name, chain}, doUpdate, onUpdateSuccess, onUpdateError)
 
   let showLoading = cache.showLoading
   if (cache.data && cache.data.keyData.name !== name) {
@@ -138,7 +147,7 @@ export default function CheckGeneral({
   let expiryStr = ''
   const expiryTagInfo = {}
 
-  if (!showLoading) {
+  if (!showLoading && validChain(chain, chains)) {
     const {
       normalizedName
     } = normalize(name)
@@ -156,7 +165,7 @@ export default function CheckGeneral({
     let noResolverSet = false
     if (nameData.resolver) {
       let lpResolver = nameData.latestPublicResolver
-      const publicResolvers = ensConfig[chain?.id]?.publicResolvers || []
+      const publicResolvers = ensConfig[chain]?.publicResolvers || []
       if ((!lpResolver || lpResolver === ethers.constants.AddressZero) && publicResolvers.length > 0) {
         lpResolver = publicResolvers[0]
       }
@@ -287,15 +296,23 @@ export default function CheckGeneral({
   return (
     <>
       <Heading>General Info</Heading>
-      <table className={styles.itemTable}>
-        <tbody>
-          {nameData.owner ? <RecordItemRow loading={showLoading} label="Owner" value={nameData.owner} secondaryValue={nameData.ownerPrimaryName} shortValue={shortAddr(nameData.owner)} tooltipValue={nameData.owner} {...ownerTagInfo}/> : <></>}
-          <RecordItemRow loading={showLoading} label="Manager" value={nameData.manager} secondaryValue={nameData.managerPrimaryName} shortValue={shortAddr(nameData.manager)} tooltipValue={nameData.manager}/>
-          {expiryStr ? <RecordItemRow loading={showLoading} label="Expiry" value={expiryStr} {...expiryTagInfo}/> : <></>}
-          <RecordItemRow loading={showLoading} label="Resolver" value={nameData.resolver} secondaryValue={nameData.resolverPrimaryName} shortValue={shortAddr(nameData.resolver)} tooltipValue={nameData.resolver} {...resolverTagInfo}/>
-          <RecordItemRow loading={showLoading} label="ETH" icon={<EthSVG/>} value={nameData.ethAddress} secondaryValue={nameData.ethAddressPrimaryName} shortValue={shortAddr(nameData.ethAddress)} tooltipValue={nameData.ethAddress} {...ethAddressTagInfo}/>
-        </tbody>
-      </table>
+      {!renderNetworkData.hasProvider ? (
+        !renderNetworkData.isChainSupported ? (
+          <Typography>No web3 provider connected.</Typography>
+        ) : (
+          <Typography>Switch to a supported network.</Typography>
+        )
+      ) : (
+        <table className={styles.itemTable}>
+          <tbody>
+            {nameData.owner ? <RecordItemRow loading={showLoading} label="Owner" value={nameData.owner} secondaryValue={nameData.ownerPrimaryName} shortValue={shortAddr(nameData.owner)} tooltipValue={nameData.owner} {...ownerTagInfo}/> : <></>}
+            <RecordItemRow loading={showLoading} label="Manager" value={nameData.manager} secondaryValue={nameData.managerPrimaryName} shortValue={shortAddr(nameData.manager)} tooltipValue={nameData.manager}/>
+            {expiryStr ? <RecordItemRow loading={showLoading} label="Expiry" value={expiryStr} {...expiryTagInfo}/> : <></>}
+            <RecordItemRow loading={showLoading} label="Resolver" value={nameData.resolver} secondaryValue={nameData.resolverPrimaryName} shortValue={shortAddr(nameData.resolver)} tooltipValue={nameData.resolver} {...resolverTagInfo}/>
+            <RecordItemRow loading={showLoading} label="ETH" icon={<EthSVG/>} value={nameData.ethAddress} secondaryValue={nameData.ethAddressPrimaryName} shortValue={shortAddr(nameData.ethAddress)} tooltipValue={nameData.ethAddress} {...ethAddressTagInfo}/>
+          </tbody>
+        </table>
+      )}
     </>
   )
 }

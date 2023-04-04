@@ -1,10 +1,8 @@
 import { keccak_256 } from 'js-sha3'
 import { Buffer } from 'buffer'
-import toast from 'react-hot-toast'
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/router'
 import { ens_normalize, ens_beautify } from '@adraffy/ens-normalize'
 import bigInt from 'big-integer'
+import toast from 'react-hot-toast'
 
 export function namehash(name) {
   // Reject empty names:
@@ -153,61 +151,8 @@ export async function copyToClipBoard(text) {
   }
 }
 
-function routerPush(router, name, basePath) {
-  let encodedName = ''
-  if (name && name.length > 0) {
-    while (name.length > 0 && name.charAt(0) === ' ') {
-      name = name.substring(1)
-    }
-    while (name.length > 0 && name.charAt(name.length - 1) === ' ') {
-      name = name.substring(0, name.length - 1)
-    }
-    if (name !== '..') {
-      encodedName = encodeURIComponent(name)
-    }
-  }
-  
-  router.push(basePath + encodedName, undefined, { shallow: true })
-
-  return name
-}
-
-export function useSetupRouterPush(basePath, setName) {
-  const [routerQuery, setRouterQuery] = useState('')
-  const [initialized, setInitialized] = useState(false)
-
-  const router = useRouter()
-  const { name: names } = router.query
-  if (names && names.length) {
-    const joined = names.join('/')
-    if (routerQuery !== joined) {
-      setRouterQuery(joined)
-    }
-  }
-
-  const onNameChange = (name) => {
-    setName(routerPush(router, name, basePath))
-  }
-
-  useEffect(() => {
-    if (routerQuery && !initialized) {
-      setInitialized(true)
-      let tname = document.getElementsByName('tname')
-      if (tname && tname.length) {
-        tname[0].value = routerQuery
-      }
-      onNameChange(routerQuery)
-    }
-  }, [routerQuery])
-
-  return onNameChange
-}
-
-export function useSetupDelayedName(name, setDelayedName) {
-  useEffect(() => {
-    const timeoutId = setTimeout(() => setDelayedName(name), 500);
-    return () => clearTimeout(timeoutId);
-  }, [name]);
+export function validChain(chain, chains) {
+  return chains.some((c) => c.id === chain)
 }
 
 // Testing purposes

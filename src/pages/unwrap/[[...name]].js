@@ -2,13 +2,14 @@ import styles from '../../styles/Unwrap.module.css'
 import Head from 'next/head'
 import { useState } from 'react'
 import { Button, Heading, Input } from '@ensdomains/thorin'
-import { useAccount, useNetwork, useProvider } from 'wagmi'
+import { useAccount, useProvider } from 'wagmi'
 import { ethers } from 'ethers'
 import Header from '../../components/header'
 import UnwrapModal from '../../components/unwrap-modal'
 import toast, { Toaster } from 'react-hot-toast'
 import { ensConfig } from '../../lib/constants'
-import { normalize, parseName, useSetupRouterPush } from '../../lib/utils'
+import { normalize, parseName } from '../../lib/utils'
+import { useChain, useRouterPush } from '../../hooks/misc'
 
 export default function Unwrap() {
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -17,11 +18,11 @@ export default function Unwrap() {
   const [labelhash, setLabelhash] = useState('')
   const [owner, setOwner] = useState('')
 
-  const onNameChange = useSetupRouterPush('/unwrap/', setName)
+  const onNameChange = useRouterPush('/unwrap/', setName)
 
   const provider = useProvider()
-  const { chain, chains } = useNetwork()
   const { address } = useAccount()
+  const { chain, chains } = useChain(provider)
 
   return (
     <>
