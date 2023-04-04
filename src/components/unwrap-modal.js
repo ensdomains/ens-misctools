@@ -17,7 +17,7 @@ import {
 import { goerli } from '@wagmi/core/chains'
 import { namehash } from '../lib/utils'
 
-export default function Unwrap({
+export default function UnwrapModal({
   name,
   parentNode,
   labelhash,

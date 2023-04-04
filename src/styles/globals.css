@@ -36,7 +36,7 @@ p a {
   );
   background-size: 110%;
   background-clip: text;
-  color: transparent;
+  color: transparent !important;
   background-repeat: no-repeat;
 }
 

@@ -10,11 +10,14 @@
   },
   "dependencies": {
     "@adraffy/ens-normalize": "^1.9.0",
-    "@ensdomains/thorin": "^0.6.4",
+    "@apollo/client": "^3.7.11",
+    "@ensdomains/thorin": "^0.6.35",
     "@rainbow-me/rainbowkit": "^0.12.4",
     "big-integer": "^1.6.51",
     "buffer": "^6.0.3",
     "ethers": "5.7.2",
+    "ethers-multicall-provider": "^3.0.0",
+    "graphql": "^16.6.0",
     "js-sha3": "^0.8.0",
     "next": "^12.2.0",
     "next-plausible": "^3.2.0",
@@ -23,6 +26,7 @@
     "react-hot-toast": "^2.4.0",
     "react-transition-state": "^1.1.4",
     "styled-components": "^5.3.9",
+    "swr": "^2.1.1",
     "wagmi": "^0.12.7"
   },
   "devDependencies": {

@@ -1,0 +1,34 @@
+.fusebox {
+  display: flex;
+  flex-direction: row;
+}
+
+.fusebox > div {
+  width: 50%;
+}
+
+.fusebox > div:first-child {
+  margin-right: 1rem;
+}
+
+.fuseskeleton {
+  width: 100% !important;
+}
+
+.fuse {
+  height: 2rem !important;
+  margin: 0.1rem 0;
+  cursor: help !important;
+}
+
+.fuse svg {
+  display: inline !important;
+}
+
+.fuseheader {
+  text-align: center;
+}
+
+.fusedialog {
+  min-width: 30rem;
+}

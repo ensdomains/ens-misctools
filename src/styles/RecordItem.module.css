@@ -1,0 +1,20 @@
+.recorditemtooltip {
+  overflow-wrap: anywhere;
+}
+
+.recorditemtag {
+  height: min-content;
+}
+
+.recorditemtagtooltip {
+  cursor: help !important;
+  height: min-content;
+}
+
+.recorditemtagtd {
+  display: flex;
+}
+
+.recorditemdialog {
+  min-width: 35rem;
+}

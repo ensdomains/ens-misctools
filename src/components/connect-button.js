@@ -2,19 +2,10 @@ import toast from 'react-hot-toast'
 import { useDisconnect } from 'wagmi'
 import { Button, Profile } from '@ensdomains/thorin'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
+import { copyToClipBoard } from '../lib/utils'
 
 export default function ConnectButtonWrapper() {
   const { disconnect } = useDisconnect()
-
-  const copyToClipBoard = async (text) => {
-    try {
-      await navigator.clipboard.writeText(text)
-      toast.success('Copied to clipboard')
-    } catch (err) {
-      console.error('Failed to copy text: ', err)
-      toast.error('Failed to copy to clipboard')
-    }
-  }
 
   return (
     <ConnectButton.Custom>
@@ -30,6 +21,7 @@ export default function ConnectButtonWrapper() {
             address={account.address}
             ensName={account.ensName}
             avatar={account.ensAvatar}
+            size="large"
             dropdownItems={[
               {
                 label: `Balance: ${account.displayBalance}`,

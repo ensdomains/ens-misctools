@@ -1,0 +1,81 @@
+.container {
+  padding: 2rem;
+  margin: 8rem auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  min-height: 100vh;
+}
+
+.containerTop {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  margin-bottom: 2rem;
+  width: 100%;
+}
+
+.containerTop > div {
+  max-width: 50rem;
+}
+
+.containerMiddle {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: space-evenly;
+  width: 100%
+}
+
+.containerMiddleCol {
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+  /* width: 45%; */
+  margin-bottom: 2rem;
+}
+
+/* .containerMiddle .containerMiddleCol:first-child {
+  width: 60%;
+}
+
+.containerMiddle .containerMiddleCol:nth-child(2) {
+  width: 35%;
+} */
+
+/* @media screen and (min-width: 1281px) and (max-width: 1360px) {
+  .containerMiddleCol {
+    width: 45%;
+  }
+}
+
+@media screen and (max-width: 1280px) {
+  .containerMiddleCol {
+    width: 100%;
+  }
+} */
+
+.containerMiddleCol > div {
+  width: 100%;
+  overflow: auto;
+}
+
+.itemTable td {
+  width: 100%;
+}
+
+.itemTable tr td:first-child {
+  padding-right: 1rem;
+  padding-bottom: 1rem;
+  vertical-align: top;
+}
+
+.itemTable tr td:first-child > * {
+  width: 100%;
+}
+
+.itemTable svg {
+  margin-right: 0.2rem;
+}
