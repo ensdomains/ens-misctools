@@ -140,7 +140,7 @@ export default function CheckSubnames({
             stateTagInfo.tagTooltipDialog = <p>
               The parent owner also cannot delete/replace this name, or burn any additional fuses.
               <br/><br/>
-              Be aware of the implications, especially if you are planning on purchasing the parent name "{bestDisplayName}".
+              Be aware of the implications, especially if you are planning on purchasing the parent name &quot;{bestDisplayName}&quot;.
               <br/><br/>
               Even if the parent name is purchased / transferred, you will <b>not be able to replace</b> this subname.
               <br/><br/>
@@ -155,7 +155,7 @@ export default function CheckSubnames({
             stateTagInfo.tagColor = 'yellowSecondary'
             stateTagInfo.tagTooltip = `This name can no longer be deleted/replaced by the owner of the parent name "${bestDisplayName}".`
             stateTagInfo.tagTooltipDialog = <p>
-              Be aware of the implications, especially if you are planning on purchasing the parent name "{bestDisplayName}".
+              Be aware of the implications, especially if you are planning on purchasing the parent name &quot;{bestDisplayName}&quot;.
               <br/><br/>
               Even if the parent name is purchased / transferred, you will <b>not be able to replace</b> this subname.
               <br/><br/>
@@ -207,7 +207,7 @@ export default function CheckSubnames({
         <Heading>Subnames</Heading>
         {isNameValid && level >= 2 ?
           (showLoading ? (<>
-            <Typography>Loading subnames for "{bestDisplayName}"...</Typography>
+            <Typography>Loading subnames for &quot;{bestDisplayName}&quot;...</Typography>
             <table className={styles.itemTable}>
               <tbody>
                 <RecordItemRow loading={showLoading}/>
@@ -221,13 +221,13 @@ export default function CheckSubnames({
                 </tbody>
               </table>
             </>) : (<>
-              <Typography>No subnames found under {bestDisplayName}.</Typography>
+              <Typography>No subnames found under &quot;{bestDisplayName}&quot;.</Typography>
             </>)
           )
         ) : isNameValid ? (
-          <Typography>Skipping subname checks for "{bestDisplayName}".<br/>Search for a second-level domain or lower to check subnames.</Typography>
+          <Typography>Skipping subname checks for &quot;{bestDisplayName}&quot;.<br/>Search for a second-level domain or lower to check subnames.</Typography>
         ) : name && (
-          <Typography>Skipping subname checks for invalid name "{bestDisplayName}".</Typography>
+          <Typography>Skipping subname checks for invalid name &quot;{bestDisplayName}&quot;.</Typography>
         )}
       </Card>
     </div>

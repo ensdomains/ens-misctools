@@ -8,16 +8,16 @@ import CheckNormalization from '../../components/check-normalization'
 import CheckGeneral from '../../components/check-general'
 import CheckWrapper from '../../components/check-wrapper'
 import CheckSubnames from '../../components/check-subnames'
-import { setupRouterPush, setupDelayedName } from '../../lib/utils'
+import { useSetupRouterPush, useSetupDelayedName } from '../../lib/utils'
 import { Toaster } from 'react-hot-toast'
 
 export default function Check() {
   const [name, setName] = useState('')
   const [delayedName, setDelayedName] = useState('')
 
-  const onNameChange = setupRouterPush('/check/', setName)
+  const onNameChange = useSetupRouterPush('/check/', setName)
 
-  setupDelayedName(name, setDelayedName)
+  useSetupDelayedName(name, setDelayedName)
 
   const provider = useProvider()
   const { chain, chains } = useNetwork()

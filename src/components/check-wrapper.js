@@ -206,7 +206,7 @@ export default function CheckWrapper({
             <br/><br/>
             This name is <b>not</b> Emancipated, so that parent owner can take back this name at any time.
             <br/><br/>
-            In order to Emancipate this name, the parent owner must first "<a href="https://support.ens.domains/howto/namewrapper/change-permissions#changing-subname-permissions-as-the-parent-owner">give up parent control</a>".
+            In order to Emancipate this name, the parent owner must first &quot;<a href="https://support.ens.domains/howto/namewrapper/change-permissions#changing-subname-permissions-as-the-parent-owner">give up parent control</a>&quot;.
             <br/><br/>
             More information here: <a href="https://support.ens.domains/dev-basics/namewrapper/states#wrapped">Wrapped State</a>
           </p>
@@ -233,7 +233,7 @@ export default function CheckWrapper({
         parentExpiryTagInfo.tagTooltipDialog = <p>
           It will expire on {parentExpiry}.
           <br/><br/>
-          A name's expiry can only be set, at maximum, to the expiry of the parent name. If the parent name "{bestParentDisplayName}" expires, so will the name "{bestDisplayName}".
+          A name&apos;s expiry can only be set, at maximum, to the expiry of the parent name. If the parent name &quot;{bestParentDisplayName}&quot; expires, so will the name &quot;{bestDisplayName}&quot;.
           <br/><br/>
           The parent name must be extended/renewed first, before the child name can be extended.
           <br/><br/>
@@ -246,7 +246,7 @@ export default function CheckWrapper({
         parentExpiryTagInfo.tagTooltipDialog = <p>
           It will expire on {parentExpiry}.
           <br/><br/>
-          A name's expiry can only be set, at maximum, to the expiry of the parent name. If the parent name "{bestParentDisplayName}" expires, so will the name "{bestDisplayName}".
+          A name&apos;s expiry can only be set, at maximum, to the expiry of the parent name. If the parent name &quot;{bestParentDisplayName}&quot; expires, so will the name &quot;{bestDisplayName}&quot;.
           <br/><br/>
           The parent name must be extended/renewed first, before the child name can be extended.
           <br/><br/>

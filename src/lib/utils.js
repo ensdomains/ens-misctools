@@ -172,7 +172,7 @@ function routerPush(router, name, basePath) {
   return name
 }
 
-export function setupRouterPush(basePath, setName) {
+export function useSetupRouterPush(basePath, setName) {
   const [routerQuery, setRouterQuery] = useState('')
   const [initialized, setInitialized] = useState(false)
 
@@ -203,7 +203,7 @@ export function setupRouterPush(basePath, setName) {
   return onNameChange
 }
 
-export function setupDelayedName(name, setDelayedName) {
+export function useSetupDelayedName(name, setDelayedName) {
   useEffect(() => {
     const timeoutId = setTimeout(() => setDelayedName(name), 500);
     return () => clearTimeout(timeoutId);

@@ -43,7 +43,7 @@ function Fuse({
       >
         <div className={styles.fusedialog}>
           {name && <>
-            This fuse {burned ? <b>has been burned</b> : <>has <b>not yet</b> been burned</>} on the name "{name}".
+            This fuse {burned ? <b>has been burned</b> : <>has <b>not yet</b> been burned</>} on the name &quot;{name}&quot;.
           </>}
           {isParentControlled && !burned && <>
             <br/><br/>
@@ -93,7 +93,7 @@ function CustomFuses({
         title={`Custom ${isParentControlled ? 'Parent' : 'Owner'}-Controlled Fuses`}
       >
         <div className={styles.fusedialog}>
-          {`${burnedCount} of ${totalCount} custom ${isParentControlled ? 'parent' : 'owner'}-controlled fuses burned`} on the name "{name}"{burnedCount > 0 ? ':' : '.'}          
+          {`${burnedCount} of ${totalCount} custom ${isParentControlled ? 'parent' : 'owner'}-controlled fuses burned`} on the name &quot;{name}&quot;{burnedCount > 0 ? ':' : '.'}          
           {burnedCount > 0 && <>
             <br/><br/>
             <ul>
@@ -205,7 +205,7 @@ const fuseInfo = {
     name: 'Cannot Approve',
     parentControlled: false,
     tooltip: 'Revokes the permission to set/update the approved Subname Renewal Manager',
-    dialog: <>the approved "subname renewal manager" for the name can no longer be updated.
+    dialog: <>the approved &quot;subname renewal manager&quot; for the name can no longer be updated.
       <br/><br/>
       More information here: <a href="https://support.ens.domains/dev-basics/namewrapper/fuses">Fuses</a>
     </>,

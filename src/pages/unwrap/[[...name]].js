@@ -8,9 +8,7 @@ import Header from '../../components/header'
 import UnwrapModal from '../../components/unwrap-modal'
 import toast, { Toaster } from 'react-hot-toast'
 import { ensConfig } from '../../lib/constants'
-import { namehash, normalize, parseName, setupRouterPush } from '../../lib/utils'
-import { keccak_256 } from 'js-sha3'
-import bigInt from 'big-integer'
+import { normalize, parseName, useSetupRouterPush } from '../../lib/utils'
 
 export default function Unwrap() {
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -19,7 +17,7 @@ export default function Unwrap() {
   const [labelhash, setLabelhash] = useState('')
   const [owner, setOwner] = useState('')
 
-  const onNameChange = setupRouterPush('/unwrap/', setName)
+  const onNameChange = useSetupRouterPush('/unwrap/', setName)
 
   const provider = useProvider()
   const { chain, chains } = useNetwork()

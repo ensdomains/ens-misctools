@@ -27,7 +27,7 @@ export default function Home() {
             </a>
           </Link>
           <br/>
-          <Typography>Check the current status of an ENS name, including normalization, expiry, resolver, wrapped state, and subnames. If you're about to buy a name, check this page first!</Typography>
+          <Typography>Check the current status of an ENS name, including normalization, expiry, resolver, wrapped state, and subnames. If you&apos;re about to buy a name, check this page first!</Typography>
         </Card>
         <Card>
           <Link href="/unwrap">
@@ -36,7 +36,7 @@ export default function Home() {
             </a>
           </Link>
           <br/>
-          <Typography>You have "upgraded" a name, or in other words wrapped the name in the ENS Name Wrapper. Use this tool to unwrap that name, if the permission to unwrap has not been revoked.</Typography>
+          <Typography>You have &quot;upgraded&quot; a name, or in other words wrapped the name in the ENS Name Wrapper. Use this tool to unwrap that name, if the permission to unwrap has not been revoked.</Typography>
         </Card>
       </div>
     </>

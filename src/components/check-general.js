@@ -171,7 +171,7 @@ export default function CheckGeneral({
         resolverTagInfo.tagTooltip = 'This name is using an older version of the Public Resolver contract.'
         resolverTagInfo.tagTooltipDialog = <p>
           {(nameData.isWrapped && !nameData.isResolverWrapperAware) ? (<>
-            Your name is currently wrapped, but the resolver you're using is not "wrapper aware".
+            Your name is currently wrapped, but the resolver you&apos;re using is not &quot;wrapper aware&quot;.
             This means that the resolver does not correctly recognize you as the owner.
             <br/><br/>
             You should upgrade to the latest Public Resolver contract.
@@ -193,7 +193,7 @@ export default function CheckGeneral({
         resolverTagInfo.tagTooltipDialog = <p>
           An ENS name will not resolve to any records (such as an ETH address) unless a <a href="https://support.ens.domains/core/records/resolver">Resolver</a> is first set on the name.
           <br/><br/>
-          If you are trying to set the name as your <a href="https://support.ens.domains/core/records/primary-name">Primary Name</a> and it doesn't show up in the list, this is why.
+          If you are trying to set the name as your <a href="https://support.ens.domains/core/records/primary-name">Primary Name</a> and it doesn&apos;t show up in the list, this is why.
           <br/><br/>
           First set the Resolver to the default Public Resolver. Then update the ETH address record to the address you want this ENS name to point to.
           <br/><br/>
@@ -220,7 +220,7 @@ export default function CheckGeneral({
       ethAddressTagInfo.tagTooltipDialog = <p>
         This means that nobody can send funds/tokens to this ENS name currently.
         <br/><br/>
-        If you are trying to set the name as your <a href="https://support.ens.domains/core/records/primary-name">Primary Name</a> and it doesn't show up in the list, this is why.   
+        If you are trying to set the name as your <a href="https://support.ens.domains/core/records/primary-name">Primary Name</a> and it doesn&apos;t show up in the list, this is why.   
         <br/><br/>
         {noResolverSet ? 
           <>First set the Resolver to the default Public Resolver. Then update the ETH address record to the address you want this ENS name to point to.</> :
