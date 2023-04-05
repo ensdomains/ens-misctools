@@ -14,8 +14,6 @@ import { useChain, useRouterPush } from '../../hooks/misc'
 export default function Unwrap() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [name, setName] = useState('')
-  const [parentNode, setParentNode] = useState('')
-  const [labelhash, setLabelhash] = useState('')
   const [owner, setOwner] = useState('')
 
   const onNameChange = useRouterPush('/unwrap/', setName)
@@ -72,8 +70,6 @@ export default function Unwrap() {
             const {
               node,
               level,
-              parentNode,
-              labelhash,
               wrappedTokenId
             } = parseName(normalizedName)
 
@@ -101,20 +97,23 @@ export default function Unwrap() {
             }
 
             // Get wrapped data
-            const nameWrapper = new ethers.Contract(ensConfig[chain].NameWrapper?.address, ensConfig[chain].NameWrapper?.abi, provider)
+            const nameWrapperAddress = ensConfig[chain].NameWrapper?.address
+            const nameWrapper = new ethers.Contract(nameWrapperAddress, ensConfig[chain].NameWrapper?.abi, provider)
             const data = await nameWrapper.getData(wrappedTokenId)
             if (!data) {
               return toast.error('Unable to retrieve wrapper data')
             } else if (!data.owner || data.owner === ethers.constants.AddressZero) {
-              return toast.error('Name is unwrapped or expired')
+              if (registryOwner === nameWrapperAddress) {
+                return toast.error('Name has expired')
+              } else {
+                return toast.error('Name is not currently wrapped')
+              }
             } else if (data.owner !== address) {
               return toast.error('You are not the owner of this wrapped name')
             } else if ((data.fuses & 1) === 1) {
               return toast.error('Permission to unwrap name has been revoked')
             }
 
-            setParentNode(parentNode)
-            setLabelhash(labelhash)
             setOwner(data.owner)
             setDialogOpen(true)
           }}
@@ -138,8 +137,6 @@ export default function Unwrap() {
           </Button>
           <UnwrapModal
             name={name}
-            parentNode={parentNode}
-            labelhash={labelhash}
             owner={owner}
             open={dialogOpen}
             setIsOpen={setDialogOpen}

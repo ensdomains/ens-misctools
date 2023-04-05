@@ -15,12 +15,10 @@ import {
   useWaitForTransaction,
 } from 'wagmi'
 import { goerli } from '@wagmi/core/chains'
-import { namehash } from '../lib/utils'
+import { normalize, parseName } from '../lib/utils'
 
 export default function UnwrapModal({
   name,
-  parentNode,
-  labelhash,
   owner,
   open,
   setIsOpen,
@@ -28,7 +26,17 @@ export default function UnwrapModal({
   const { chain } = useNetwork()
   const [isUnwrapped, setIsUnwrapped] = useState(false)
 
-  const isETH2LD = parentNode === namehash('eth')
+  const {
+    isNameValid,
+    normalizedName,
+    bestDisplayName
+  } = normalize(name)
+
+  const {
+    parentNode,
+    labelhash,
+    isETH2LD
+  } = parseName(normalizedName)
 
   // Contract write: unwrap
   const unwrap = useContractWrite({
@@ -68,11 +76,11 @@ export default function UnwrapModal({
   return (
     <>
       <Dialog
-        open={open}
+        open={open && isNameValid}
         className="modal"
         title={
           <Heading as="h2" align="center">
-            {isUnwrapped ? 'Unwrap Complete!' : `${name}`}
+            {isUnwrapped ? 'Unwrap Complete!' : `${bestDisplayName}`}
           </Heading>
         }
         variant="actionable"
@@ -94,7 +102,7 @@ export default function UnwrapModal({
             // Link to ENS manager
             <Button
               as="a"
-              href={`https://app.ens.domains/name/${name}/details`}
+              href={`https://app.ens.domains/name/${bestDisplayName}/details`}
               target="_blank"
               rel="noreferrer"
             >
@@ -130,7 +138,7 @@ export default function UnwrapModal({
           <Typography size="base" style={{ marginBottom: '1.5rem' }}>
             {isUnwrapped && (
               <p>
-                You successfully unwrapped <strong>{name}</strong>!
+                You successfully unwrapped <strong>{bestDisplayName}</strong>!
               </p>
             )}
           </Typography>
