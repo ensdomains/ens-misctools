@@ -2,6 +2,10 @@
   overflow-wrap: anywhere;
 }
 
+.recorditemtooltip > div {
+  display: inline;
+}
+
 .recorditemtag {
   height: min-content;
 }
@@ -15,6 +19,19 @@
   display: flex;
 }
 
+.recorditemtagdiv {
+  display: flex;
+  flex-direction: column;
+}
+
 .recorditemdialog {
   min-width: 35rem;
+}
+
+.recorditemdialog > div {
+  display: inline;
+}
+
+.recorditemdialog a {
+  color: rgb(82, 152, 255);
 }

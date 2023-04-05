@@ -43,7 +43,7 @@ function Fuse({
       >
         <div className={styles.fusedialog}>
           {name && <>
-            This fuse {burned ? <b>has been burned</b> : <>has <b>not yet</b> been burned</>} on the name &quot;{name}&quot;.
+            This fuse {burned ? <b>has been burned</b> : <>has <b>not yet</b> been burned</>} on the name &quot;<Typography>{name}</Typography>&quot;.
           </>}
           {isParentControlled && !burned && <>
             <br/><br/>
@@ -93,7 +93,7 @@ function CustomFuses({
         title={`Custom ${isParentControlled ? 'Parent' : 'Owner'}-Controlled Fuses`}
       >
         <div className={styles.fusedialog}>
-          {`${burnedCount} of ${totalCount} custom ${isParentControlled ? 'parent' : 'owner'}-controlled fuses burned`} on the name &quot;{name}&quot;{burnedCount > 0 ? ':' : '.'}          
+          {`${burnedCount} of ${totalCount} custom ${isParentControlled ? 'parent' : 'owner'}-controlled fuses burned`} on the name &quot;<Typography>{name}</Typography>&quot;{burnedCount > 0 ? ':' : '.'}          
           {burnedCount > 0 && <>
             <br/><br/>
             <ul>

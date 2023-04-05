@@ -143,20 +143,20 @@ export default function CheckWrapper({
             stateTagInfo.tag = 'Unregistered / Expired'
             stateTagInfo.tagColor = 'yellowSecondary'
             stateTagInfo.tagTooltip = 'This name was previously wrapped, but has since expired.'
-            stateTagInfo.tagTooltipDialog = <p>
+            stateTagInfo.tagTooltipDialog = <>
               The parent owner can create/replace this name.
               <br/><br/>
               If the parent name has a subname registrar active, then you may be able to re-register this name there.
-            </p>
+            </>
           } else {
             stateTagInfo.tag = 'Unregistered / Expired'
             stateTagInfo.tagColor = 'yellowSecondary'
             stateTagInfo.tagTooltip = 'This name has either never been wrapped, or has expired.'
-            stateTagInfo.tagTooltipDialog = <p>
+            stateTagInfo.tagTooltipDialog = <>
               The parent owner can create/replace this name.
               <br/><br/>
               If the parent name has a subname registrar active, then you may be able to register this name there.
-            </p>
+            </>
           }
         } else {
           stateTagInfo.tag = 'Unwrapped'
@@ -168,7 +168,7 @@ export default function CheckWrapper({
         stateTagInfo.tagColor = 'blueSecondary'
         stateTagInfo.tagTooltip = 'This name can no longer be unwrapped.'
         if (!isParent) {
-          stateTagInfo.tagTooltipDialog = <p>
+          stateTagInfo.tagTooltipDialog = <>
             The parent owner also cannot delete/replace this name, or burn any additional fuses.
             <br/><br/>
             This will be true until the expiry on <b>{expiryStr}</b>.
@@ -182,14 +182,14 @@ export default function CheckWrapper({
               <br/><br/>
               More information here: <a href="https://support.ens.domains/dev-basics/namewrapper/expiry">Expiry</a>
             </>}
-          </p>
+          </>
         }
       } else if ((fuses & 65536) === 65536) {
         stateTagInfo.tag = 'Emancipated'
         stateTagInfo.tagColor = 'blueSecondary'
-        stateTagInfo.tagTooltip = `This name can no longer be deleted/replaced by the owner of the parent name "${bestParentDisplayName}".`
+        stateTagInfo.tagTooltip = <>This name can no longer be deleted/replaced by the owner of the parent name &quot;<Typography>{bestParentDisplayName}</Typography>&quot;.</>
         if (!isParent) {
-          stateTagInfo.tagTooltipDialog = <p>
+          stateTagInfo.tagTooltipDialog = <>
             The parent owner also cannot burn any additional fuses on this name.
             <br/><br/>
             This will be true until the expiry on <b>{expiryStr}</b>.
@@ -203,14 +203,14 @@ export default function CheckWrapper({
               <br/><br/>
               More information here: <a href="https://support.ens.domains/dev-basics/namewrapper/expiry">Expiry</a>
             </>}
-          </p>
+          </>
         }
       } else {
         stateTagInfo.tag = 'Wrapped'
         stateTagInfo.tagColor = 'blueSecondary'
-        stateTagInfo.tagTooltip = `This name can be deleted/replaced by the owner of the parent name "${bestParentDisplayName}".`
+        stateTagInfo.tagTooltip = <>This name can be deleted/replaced by the owner of the parent name &quot;<Typography>{bestParentDisplayName}</Typography>&quot;.</>
         if (!isParent) {
-          stateTagInfo.tagTooltipDialog = <p>
+          stateTagInfo.tagTooltipDialog = <>
             Be aware of the implications, especially if you are planning on purchasing this name.
             <br/><br/>
             This name is <b>not</b> Emancipated, so that parent owner can take back this name at any time.
@@ -218,7 +218,7 @@ export default function CheckWrapper({
             In order to Emancipate this name, the parent owner must first &quot;<a href="https://support.ens.domains/howto/namewrapper/change-permissions#changing-subname-permissions-as-the-parent-owner">give up parent control</a>&quot;.
             <br/><br/>
             More information here: <a href="https://support.ens.domains/dev-basics/namewrapper/states#wrapped">Wrapped State</a>
-          </p>
+          </>
         }
       }
     }
@@ -239,15 +239,15 @@ export default function CheckWrapper({
         parentExpiryTagInfo.tag = 'Expiring Soon'
         parentExpiryTagInfo.tagColor = 'yellowSecondary'
         parentExpiryTagInfo.tagTooltip = 'This parent name is expiring soon.'
-        parentExpiryTagInfo.tagTooltipDialog = <p>
+        parentExpiryTagInfo.tagTooltipDialog = <>
           It will expire on {parentExpiry}.
           <br/><br/>
-          A name&apos;s expiry can only be set, at maximum, to the expiry of the parent name. If the parent name &quot;{bestParentDisplayName}&quot; expires, so will the name &quot;{bestDisplayName}&quot;.
+          A name&apos;s expiry can only be set, at maximum, to the expiry of the parent name. If the parent name &quot;<Typography>{bestParentDisplayName}</Typography>&quot; expires, so will the name &quot;{bestDisplayName}&quot;.
           <br/><br/>
           The parent name must be extended/renewed first, before the child name can be extended.
           <br/><br/>
           More information here: <a href="https://support.ens.domains/dev-basics/namewrapper/expiry">Expiry</a>
-        </p>
+        </>
       }
     }
   }

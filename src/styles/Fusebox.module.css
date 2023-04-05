@@ -32,3 +32,11 @@
 .fusedialog {
   min-width: 30rem;
 }
+
+.fusedialog > div {
+  display: inline;
+}
+
+.fusedialog a {
+  color: rgb(82, 152, 255);
+}

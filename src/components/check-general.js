@@ -178,7 +178,7 @@ export default function CheckGeneral({
         resolverTagInfo.tag = 'Old Public Resolver'
         resolverTagInfo.tagColor = 'yellowSecondary'
         resolverTagInfo.tagTooltip = 'This name is using an older version of the Public Resolver contract.'
-        resolverTagInfo.tagTooltipDialog = <p>
+        resolverTagInfo.tagTooltipDialog = <>
           {(nameData.isWrapped && !nameData.isResolverWrapperAware) ? (<>
             Your name is currently wrapped, but the resolver you&apos;re using is not &quot;wrapper aware&quot;.
             This means that the resolver does not correctly recognize you as the owner.
@@ -193,13 +193,13 @@ export default function CheckGeneral({
           </>)}
           <br/><br/>
           More information here: <a href="https://support.ens.domains/core/records/resolver">Resolver</a>
-        </p>
+        </>
       } else if (nameData.resolver === ethers.constants.AddressZero) {
         noResolverSet = true
         resolverTagInfo.tag = 'No Resolver Set'
         resolverTagInfo.tagColor = 'yellowSecondary'
         resolverTagInfo.tagTooltip = 'There is no resolver contract set on this name.'
-        resolverTagInfo.tagTooltipDialog = <p>
+        resolverTagInfo.tagTooltipDialog = <>
           An ENS name will not resolve to any records (such as an ETH address) unless a <a href="https://support.ens.domains/core/records/resolver">Resolver</a> is first set on the name.
           <br/><br/>
           If you are trying to set the name as your <a href="https://support.ens.domains/core/records/primary-name">Primary Name</a> and it doesn&apos;t show up in the list, this is why.
@@ -207,18 +207,18 @@ export default function CheckGeneral({
           First set the Resolver to the default Public Resolver. Then update the ETH address record to the address you want this ENS name to point to.
           <br/><br/>
           More information here: <a href="https://support.ens.domains/core/records/resolver">Resolver</a>
-        </p>
+        </>
       } else {
         resolverTagInfo.tag = 'Custom Resolver'
         resolverTagInfo.tagColor = 'blueSecondary'
         resolverTagInfo.tagTooltip = 'This name is using a custom resolver contract.'
-        resolverTagInfo.tagTooltipDialog = <p>
+        resolverTagInfo.tagTooltipDialog = <>
           This may be expected if this name is being used in conjunction with a custom project.
           <br/><br/>
           However, if you do not recognize this contract, then you can choose to update it to the Latest Public Resolver, and then re-set any records.
           <br/><br/>
           More information here: <a href="https://support.ens.domains/core/records/resolver">Resolver</a>
-        </p>
+        </>
       }
     }
 
@@ -226,7 +226,7 @@ export default function CheckGeneral({
       ethAddressTagInfo.tag = 'No ETH Address Set'
       ethAddressTagInfo.tagColor = 'yellowSecondary'
       ethAddressTagInfo.tagTooltip = 'This name does not currently point to any ETH address.'
-      ethAddressTagInfo.tagTooltipDialog = <p>
+      ethAddressTagInfo.tagTooltipDialog = <>
         This means that nobody can send funds/tokens to this ENS name currently.
         <br/><br/>
         If you are trying to set the name as your <a href="https://support.ens.domains/core/records/primary-name">Primary Name</a> and it doesn&apos;t show up in the list, this is why.   
@@ -237,7 +237,7 @@ export default function CheckGeneral({
         }
         <br/><br/>
         More information here: <a href="https://support.ens.domains/howto/add-wallet-address">Add a Wallet Address</a>
-      </p>
+      </>
     }
 
     if (nameData.expiry && nameData.expiry > 0) {
@@ -254,7 +254,7 @@ export default function CheckGeneral({
         expiryTagInfo.tagColor = 'redSecondary'
         expiryTagInfo.tagTooltip = 'This name is expired.'
         if (isETH2LD) {
-          expiryTagInfo.tagTooltipDialog = <p>
+          expiryTagInfo.tagTooltipDialog = <>
             {nowMs >= graceEnd ? <>
               The grace period for this name ended on {parseExpiry(graceEnd / 1000)}.
               <br/><br/>
@@ -266,28 +266,28 @@ export default function CheckGeneral({
             </>}
             <br/><br/>
             More information here: <a href="https://support.ens.domains/core/registration/renewals">Renewals</a>
-          </p>
+          </>
         } else {
-          expiryTagInfo.tagTooltipDialog = <p>
+          expiryTagInfo.tagTooltipDialog = <>
             It expired on {expiryStr}.
             <br/><br/>
             The parent owner can now recreate/replace this name.
             <br/><br/>
             If the parent name has a subname registrar active, then you may be able to re-register this name there.
-          </p>
+          </>
         }
       } else if (nowMs + days90Ms >= epochMs) {
         expiryTagInfo.tag = 'Expiring Soon'
         expiryTagInfo.tagColor = 'yellowSecondary'
         expiryTagInfo.tagTooltip = 'This name is expiring soon.'
         if (isETH2LD) {
-          expiryTagInfo.tagTooltipDialog = <p>
+          expiryTagInfo.tagTooltipDialog = <>
             It will expire on {expiryStr}.
             <br/><br/>
             If it is not renewed, then you will lose ownership of the name.
             <br/><br/>
             More information here: <a href="https://support.ens.domains/core/registration/renewals">Renewals</a>
-          </p>
+          </>
         }
       }
     }

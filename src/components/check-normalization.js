@@ -21,8 +21,14 @@ export default function CheckNormalization({
 
   if (name !== '') {
     if (isNameNormalized) {
-      inputTagInfo.tag = 'Normalized'
-      inputTagInfo.tagColor = 'greenSecondary'
+      if (nameNeedsBeautification) {
+        inputTagInfo.tag = 'Has Beautified Form'
+        inputTagInfo.tagColor = 'blueSecondary'
+        inputTagInfo.tagTooltip = 'This is the canonical version of the name. However, when displaying to users, you may also use the "beautified" version below.'
+      } else {
+        inputTagInfo.tag = 'Normalized'
+        inputTagInfo.tagColor = 'greenSecondary'
+      }
     } else if (isNameValid) {
       inputTagInfo.tag = 'Not Normalized'
       inputTagInfo.tagColor = 'yellowSecondary'

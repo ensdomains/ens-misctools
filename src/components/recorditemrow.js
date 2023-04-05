@@ -142,26 +142,28 @@ export default function RecordItemRow({
               </Skeleton>
             </div>
           }
-          {tag && !loading &&
-            <TagWithTooltip
-              tagValue={tag}
-              tagIcon={tIcon}
-              tooltipValue={tagTooltip}
-              tooltipDialogValue={tagTooltipDialog}
-              colorStyle={tagColor}
-              size="medium"
-            />
-          }
-          {tag2 && !loading &&
-            <TagWithTooltip
-              tagValue={tag2}
-              tagIcon={t2Icon}
-              tooltipValue={tag2Tooltip}
-              tooltipDialogValue={tag2TooltipDialog}
-              colorStyle={tag2Color}
-              size="medium"
-            />
-          }
+          <div className={styles.recorditemtagdiv}>
+            {tag && !loading &&
+              <TagWithTooltip
+                tagValue={tag}
+                tagIcon={tIcon}
+                tooltipValue={tagTooltip}
+                tooltipDialogValue={tagTooltipDialog}
+                colorStyle={tagColor}
+                size="medium"
+              />
+            }
+            {tag2 && !loading &&
+              <TagWithTooltip
+                tagValue={tag2}
+                tagIcon={t2Icon}
+                tooltipValue={tag2Tooltip}
+                tooltipDialogValue={tag2TooltipDialog}
+                colorStyle={tag2Color}
+                size="medium"
+              />
+            }
+          </div>
         </div>
       </td>
     </tr>
