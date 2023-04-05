@@ -1,12 +1,35 @@
 .container {
-  padding: 2rem;
+  padding: 8rem 2rem 2rem 2rem;
   margin: 0 auto;
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-evenly;
   align-items: center;
   min-height: 100vh;
 }
+
+@media screen and (max-width: 640px) {
+  .container {
+    padding: 2rem;
+  }
+}
   
 .container div {
   max-width: 25rem;
+}
+
+.container > div {
+  margin-bottom: 1.5rem;
+}
+
+.container div > img {
+  width: 100%;
+  border-radius: 8px;
+}
+
+.container div > img:hover {
+  transform: translateY(-1px);
+  transition-duration: 150ms;
+  transition-timing-function: cubic-bezier(0.42,0,0.58,1);
+  opacity: 90%;
 }

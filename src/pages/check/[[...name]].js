@@ -24,7 +24,7 @@ export default function Check() {
         <meta name="description" content="Quick dashboard for normalization, expiry, parent expiry, resolver, wrapped state, and subnames"/>
         <meta property="og:title" content="ENS Misc Tools - Check Name"/>
         <meta property="og:description" content="Quick dashboard for normalization, expiry, parent expiry, resolver, wrapped state, and subnames"/>
-        <meta property="og:image" content="https://ens-misctools.vercel.app/sharing-check.png"/>
+        <meta property="og:image" content="https://ens-misctools.vercel.app/sharing-check.jpg"/>
         <meta property="twitter:card" content="summary_large_image"/>
         <meta property="twitter:creator" content="@serenae_fansubs"/>
       </Head>
