@@ -8,7 +8,7 @@ import Header from '../../components/header'
 import UnwrapModal from '../../components/unwrap-modal'
 import toast, { Toaster } from 'react-hot-toast'
 import { ensConfig } from '../../lib/constants'
-import { normalize, parseName } from '../../lib/utils'
+import { validChain, normalize, parseName } from '../../lib/utils'
 import { useChain, useRouterPush } from '../../hooks/misc'
 
 export default function Unwrap() {
@@ -87,12 +87,12 @@ export default function Unwrap() {
             }
 
             // Check the connected chain
-            if (!chains.some((c) => c.id === chain?.id)) {
+            if (!validChain(chain, chains)) {
               return toast.error('Switch to a supported network')
             }
 
             // Get registry owner
-            const registry = new ethers.Contract(ensConfig[chain?.id].Registry?.address, ensConfig[chain?.id].Registry?.abi, provider)
+            const registry = new ethers.Contract(ensConfig[chain].Registry?.address, ensConfig[chain].Registry?.abi, provider)
             const registryOwner = await registry.owner(node)
             if (!registryOwner) {
               return toast.error('Unable to retrieve registry data')
@@ -101,7 +101,7 @@ export default function Unwrap() {
             }
 
             // Get wrapped data
-            const nameWrapper = new ethers.Contract(ensConfig[chain?.id].NameWrapper?.address, ensConfig[chain?.id].NameWrapper?.abi, provider)
+            const nameWrapper = new ethers.Contract(ensConfig[chain].NameWrapper?.address, ensConfig[chain].NameWrapper?.abi, provider)
             const data = await nameWrapper.getData(wrappedTokenId)
             if (!data) {
               return toast.error('Unable to retrieve wrapper data')
