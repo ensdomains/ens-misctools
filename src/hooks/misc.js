@@ -1,11 +1,16 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/router'
 import { useNetwork } from 'wagmi'
 import { mainnet, goerli } from '@wagmi/core/chains'
+import { validChain } from '../lib/utils'
+
+const defaultChains = [mainnet, goerli]
 
 export function useChain(provider) {
+  const [hasProvider, setHasProvider] = useState(false)
+  const [isChainSupported, setChainSupported] = useState(false)
   const [providerChain, setProviderChain] = useState(0)
-  const { chain: connectedChain, chains } = useNetwork()
+  const { chain: walletChain, chains: walletChains } = useNetwork()
 
   provider.getNetwork().then(network => {
     if (network && providerChain !== network.chainId) {
@@ -13,24 +18,31 @@ export function useChain(provider) {
     }
   })
 
-  if (connectedChain) {
-    return {
-      chain: connectedChain.id,
-      chains
-    }
-  } else {
-    return {
-      chain: providerChain,
-      chains: [mainnet, goerli]
-    }
+  const chain = walletChain ? walletChain.id : providerChain
+  const chains = walletChain ? walletChains : defaultChains
+
+  useEffect(() => {
+    setHasProvider(!!chain)
+    setChainSupported(validChain(chain, chains))
+  }, [chain, chains])
+
+  return {
+    chain,
+    chains,
+    hasProvider,
+    isChainSupported
   }
 }
 
-export function useDelayedName(name, setDelayedName) {
+export function useDelayedName(name) {
+  const [delayedName, setDelayedName] = useState('')
+
   useEffect(() => {
     const timeoutId = setTimeout(() => setDelayedName(name), 500);
     return () => clearTimeout(timeoutId);
-  }, [name]);
+  }, [name, setDelayedName]);
+
+  return delayedName
 }
 
 function routerPush(router, name, basePath) {
@@ -65,9 +77,9 @@ export function useRouterPush(basePath, setName) {
     }
   }
 
-  const onNameChange = (name) => {
+  const onRouterQueryInit = useCallback((name) => {
     setName(routerPush(router, name, basePath))
-  }
+  }, [router, basePath, setName])
 
   useEffect(() => {
     if (routerQuery && !initialized) {
@@ -76,11 +88,13 @@ export function useRouterPush(basePath, setName) {
       if (tname && tname.length) {
         tname[0].value = routerQuery
       }
-      onNameChange(routerQuery)
+      onRouterQueryInit(routerQuery)
     }
-  }, [routerQuery])
+  }, [routerQuery, initialized, onRouterQueryInit])
 
-  return onNameChange
+  return (name) => {
+    setName(routerPush(router, name, basePath))
+  }
 }
 
 const exports = {

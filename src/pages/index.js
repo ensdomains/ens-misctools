@@ -14,7 +14,7 @@ export default function Home() {
         <meta name="description" content="Miscellaneous tasks that aren't yet in the ENS Manager App"/>
         <meta property="og:title" content="ENS Misc Tools"/>
         <meta property="og:description" content="Miscellaneous tasks that aren't yet in the ENS Manager App"/>
-        <meta property="og:image" content="/sharing.png"/>
+        <meta property="og:image" content="https://ens-misctools.vercel.app/sharing.png"/>
         <meta property="twitter:card" content="summary_large_image"/>
         <meta property="twitter:creator" content="@serenae_fansubs"/>
       </Head>

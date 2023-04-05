@@ -40,7 +40,7 @@ export default function Header({ position }) {
     if (window.location.hash === '#embedded' && !topLinkDisabled) {
       setTopLinkDisabled(true)
     }
-  }, [])
+  }, [topLinkDisabled])
 
   return (
     <header className={['header', [position && `header--${position}`]].join(' ')}>

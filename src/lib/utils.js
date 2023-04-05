@@ -16,7 +16,7 @@ export function namehash(name) {
 
     for(i = labels.length - 1; i >= 0; i--) {
       var labelSha = keccak_256(labels[i])
-      node = keccak_256(new Buffer(node + labelSha, 'hex'))
+      node = keccak_256(Buffer.from(node + labelSha, 'hex'))
     }
   }
 

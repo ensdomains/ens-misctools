@@ -5,7 +5,7 @@ import { ensConfig } from '../lib/constants'
 import { validChain, normalize, parseName, hasExpiry, parseExpiry } from '../lib/utils'
 import useCache from '../hooks/cache'
 import { useChain } from '../hooks/misc'
-import { useState, useEffect } from 'react'
+import { useState, } from 'react'
 import { useProvider } from 'wagmi'
 import { goerli } from '@wagmi/core/chains'
 import { ethers } from 'ethers'
@@ -15,17 +15,9 @@ import toast from 'react-hot-toast'
 export default function CheckSubnames({
   name
 }) {
-  const [renderNetworkData, setRenderNetworkData] = useState({})
   const [nameData, setNameData] = useState(defaultNameData())
   const provider = useProvider()
-  const { chain, chains } = useChain(provider)
-  
-  useEffect(() => {
-    setRenderNetworkData({
-      hasProvider: !!chain,
-      isChainSupported: validChain(chain, chains)
-    })
-  }, [chain])
+  const { chain, chains, hasProvider, isChainSupported } = useChain(provider)
 
   const doUpdate = async ({name, chain}) => {
     const nameData = defaultNameData();
@@ -214,8 +206,8 @@ export default function CheckSubnames({
     <div className={styles.containerMiddleCol}>
       <Card>
         <Heading>Subnames</Heading>
-        {!renderNetworkData.hasProvider ? (
-          !renderNetworkData.isChainSupported ? (
+        {!hasProvider ? (
+          !isChainSupported ? (
             <Typography>No web3 provider connected.</Typography>
           ) : (
             <Typography>Switch to a supported network.</Typography>
