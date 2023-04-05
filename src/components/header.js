@@ -45,7 +45,7 @@ export default function Header({ position }) {
   return (
     <header className={['header', [position && `header--${position}`]].join(' ')}>
       <Link href={topLinkDisabled ? '#' : '/'}>
-        <a>
+        <a style={topLinkDisabled ? {cursor:'default'} : {}}>
           <Heading as="span" level="2" className="header__name">
             ENS Misc Tools
           </Heading>
