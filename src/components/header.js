@@ -10,6 +10,7 @@ export default function Header({ position }) {
   const provider = useProvider()
   const { chain } = useChain(provider)
   const [tagInfo, setTagInfo] = useState({})
+  const [topLinkDisabled, setTopLinkDisabled] = useState(false)
 
   useEffect(() => {
     let tagColor = 'greyPrimary'
@@ -35,9 +36,15 @@ export default function Header({ position }) {
     })
   }, [chain])
 
+  useEffect(() => {
+    if (window.location.hash === '#embedded' && !topLinkDisabled) {
+      setTopLinkDisabled(true)
+    }
+  }, [])
+
   return (
     <header className={['header', [position && `header--${position}`]].join(' ')}>
-      <Link href="/">
+      <Link href={topLinkDisabled ? '#' : '/'}>
         <a>
           <Heading as="span" level="2" className="header__name">
             ENS Misc Tools
