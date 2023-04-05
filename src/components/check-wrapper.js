@@ -234,7 +234,7 @@ export default function CheckWrapper({
         parentExpiryTagInfo.tagTooltipDialog = <>
           It will expire on {parentExpiry}.
           <br/><br/>
-          A name&apos;s expiry can only be set, at maximum, to the expiry of the parent name. If the parent name &quot;<Typography>{bestParentDisplayName}</Typography>&quot; expires, so will the name &quot;{bestDisplayName}&quot;.
+          A name&apos;s expiry can only be set, at maximum, to the expiry of the parent name. If the parent name &quot;<Typography>{bestParentDisplayName}</Typography>&quot; expires, so will the name &quot;<Typography>{bestDisplayName}</Typography>&quot;.
           <br/><br/>
           The parent name must be extended/renewed first, before the child name can be extended.
           <br/><br/>

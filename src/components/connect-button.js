@@ -1,8 +1,7 @@
-import toast from 'react-hot-toast'
 import { useDisconnect } from 'wagmi'
 import { Button, Profile } from '@ensdomains/thorin'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
-import { copyToClipBoard } from '../lib/utils'
+import { copyToClipBoard, normalize } from '../lib/utils'
 
 export default function ConnectButtonWrapper() {
   const { disconnect } = useDisconnect()
@@ -19,7 +18,7 @@ export default function ConnectButtonWrapper() {
         ) : (
           <Profile
             address={account.address}
-            ensName={account.ensName}
+            ensName={normalize(account.ensName).bestDisplayName}
             avatar={account.ensAvatar}
             size="large"
             dropdownItems={[
