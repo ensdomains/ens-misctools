@@ -4,6 +4,7 @@ const registryABI = require('./ens-registry-abi.json')
 const ethRegistrarABI = require('./ens-eth-registrar-abi.json')
 const nameWrapperABI = require('./ens-namewrapper-abi.json')
 const latestPublicResolverABI = require('./ens-latest-public-resolver.json')
+const universalResolverABI = require('./ens-universal-resolver.json')
 
 export const ensConfig = {
   [mainnet.id]: {
@@ -27,6 +28,10 @@ export const ensConfig = {
     LatestPublicResolver: {
       address: '0x231b0Ee14048e9dCcD1d247744d114a4EB5E8E63',
       abi: latestPublicResolverABI,
+    },
+    UniversalResolver: {
+      address: '0xc0497E381f536Be9ce14B0dD3817cBcAe57d2F62',
+      abi: universalResolverABI
     },
   },
   [goerli.id]: {
@@ -52,6 +57,10 @@ export const ensConfig = {
     LatestPublicResolver: {
       address: '0xd7a4F6473f32aC2Af804B3686AE8F1932bC35750',
       abi: latestPublicResolverABI,
+    },
+    UniversalResolver: {
+      address: '0x56522d00c410a43bffdf00a9a569489297385790',
+      abi: universalResolverABI
     },
   },
 }

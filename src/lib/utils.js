@@ -1,6 +1,8 @@
 import { keccak_256 } from 'js-sha3'
 import { Buffer } from 'buffer'
+import { ethers } from 'ethers'
 import { ens_normalize, ens_beautify } from '@adraffy/ens-normalize'
+import dnsPacket from 'dns-packet'
 import bigInt from 'big-integer'
 import toast from 'react-hot-toast'
 
@@ -21,6 +23,53 @@ export function namehash(name) {
   }
 
   return '0x' + node
+}
+
+export function dnsEncode(name) {
+  return dnsPacket.name.encode(name)
+}
+
+export function encodeMethodData(method, data, format) {
+  const methodID = Buffer.from(keccak_256(method).substring(0, 8), 'hex')
+  if (data && Object.prototype.toString.call(data) === '[object String]') {
+    if (data.indexOf('0x') === 0) {
+      data = data.substring(2)
+    }
+    data = Buffer.from(data, 'hex')
+  }
+  const result = Buffer.concat([methodID, data])
+  return format === 'hex' ? result.toString('hex') : result
+}
+
+export function convertToAddress(bytes32) {
+  try {
+    return ethers.utils.defaultAbiCoder.decode(['address'], bytes32)[0]
+  } catch (e) {
+    console.error(e)
+    return ''
+  }
+}
+
+export function universalResolveAddr(universalResolver, name, node) {
+  if (!node) {
+    node = parseName(name).node
+  }
+  return universalResolver['resolve(bytes,bytes)'](dnsEncode(name), encodeMethodData('addr(bytes32)', node), {
+    ccipReadEnabled: true
+  }).catch(e => e)
+}
+
+export function universalResolvePrimaryName(universalResolver, address) {
+  return universalResolver['reverse(bytes)'](dnsEncode(address.toLowerCase().substring(2) + '.addr.reverse'), {
+    ccipReadEnabled: true
+  }).catch(e => e)
+}
+
+export function getUniversalResolverPrimaryName(address, result) {
+  if (result && !(result instanceof Error) && result.length > 1 && result[1] === address) {
+    return normalize(result[0]).bestDisplayName
+  }
+  return ''
 }
 
 export function normalize(name) {

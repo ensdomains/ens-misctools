@@ -24,7 +24,7 @@ export default function Home() {
         <Card>
           <Link href="/check">
             <a>
-              <div><Image src="/sharing-check.png" alt="Check Name" width="350" height="175"/></div>
+              <div><Image src="/sharing-check.png" alt="Check Name" width="350" height="175" priority/></div>
             </a>
           </Link>
           <Typography>Check the current status of an ENS name, including normalization, expiry, resolver, wrapped state, and subnames. If you&apos;re about to buy a name, check this page first!</Typography>
@@ -32,7 +32,7 @@ export default function Home() {
         <Card>
           <Link href="/unwrap">
             <a>
-              <div><Image src="/sharing-unwrap.png" alt="Unwrap Name" width="350" height="175"/></div>
+              <div><Image src="/sharing-unwrap.png" alt="Unwrap Name" width="350" height="175" priority/></div>
             </a>
           </Link>
           <Typography>You have &quot;upgraded&quot; a name, or in other words wrapped the name in the ENS Name Wrapper. Use this tool to unwrap that name, if the permission to unwrap has not been revoked.</Typography>

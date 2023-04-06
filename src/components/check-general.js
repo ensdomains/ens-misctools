@@ -2,13 +2,24 @@ import styles from '../styles/Check.module.css'
 import { EthSVG, Heading, Typography } from '@ensdomains/thorin'
 import RecordItemRow from './recorditemrow'
 import { ensConfig } from '../lib/constants'
-import { validChain, normalize, parseName, shortAddr, parseExpiry } from '../lib/utils'
+import {
+  validChain,
+  normalize,
+  parseName,
+  universalResolveAddr,
+  universalResolvePrimaryName,
+  getUniversalResolverPrimaryName,
+  convertToAddress,
+  shortAddr,
+  parseExpiry
+} from '../lib/utils'
 import useCache from '../hooks/cache'
 import { useChain } from '../hooks/misc'
 import { useState } from 'react'
 import { useProvider } from 'wagmi'
 import { goerli } from '@wagmi/core/chains'
 import { ethers } from 'ethers'
+import { MulticallWrapper } from 'ethers-multicall-provider'
 import toast from 'react-hot-toast'
 
 export default function CheckGeneral({
@@ -36,79 +47,131 @@ export default function CheckGeneral({
           wrappedTokenId
         } = parseName(normalizedName)
 
-        // Get registry owner
-        const registry = new ethers.Contract(ensConfig[chain].Registry?.address, ensConfig[chain].Registry?.abi, provider)
-        const registryOwner = await registry.owner(node)
-        nameData.manager = registryOwner
-        
-        nameData.resolver = await registry.resolver(node)
-        nameData.ethAddress = await provider.resolveName(normalizedName) || ''
+        try {
+          const multi = MulticallWrapper.wrap(provider)
+          const batch1 = []
 
-        if (isETH2LD) {
-          // Get registrar owner
-          const ethRegistrar = new ethers.Contract(ensConfig[chain].ETHRegistrar?.address, ensConfig[chain].ETHRegistrar?.abi, provider)
-          try {
-            nameData.owner = await ethRegistrar.ownerOf(eth2LDTokenId)
-          } catch (e) {
-            try {
-              // TODO: Switch off hosted service
-              const response = await fetch(`https://api.thegraph.com/subgraphs/name/ensdomains/ens${chain === goerli.id ? 'goerli' : ''}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({query: `query {registration(id:"${labelhash}"){registrant{id}}}`})
-              });
-              const rsp = await response.json();
-              nameData.owner = rsp.data?.registration?.registrant?.id || ethers.constants.AddressZero
-            } catch (e2) {
-              console.error(e2)
-              nameData.owner = ethers.constants.AddressZero
+          // Get registry owner
+          const registry = new ethers.Contract(ensConfig[chain].Registry?.address, ensConfig[chain].Registry?.abi, multi)
+          batch1.push(registry.owner(node))
+
+          const universalResolver = new ethers.Contract(ensConfig[chain].UniversalResolver?.address, ensConfig[chain].UniversalResolver?.abi, multi)
+          batch1.push(universalResolveAddr(universalResolver, normalizedName, node))
+
+          if (isETH2LD) {
+            // Get registrar owner
+            const ethRegistrar = new ethers.Contract(ensConfig[chain].ETHRegistrar?.address, ensConfig[chain].ETHRegistrar?.abi, multi)
+            batch1.push(ethRegistrar.ownerOf(eth2LDTokenId).catch(e => e))
+            batch1.push(ethRegistrar.nameExpires(eth2LDTokenId))
+          }
+
+          const nameWrapperAddress = ensConfig[chain].NameWrapper?.address
+          const nameWrapper = new ethers.Contract(nameWrapperAddress, ensConfig[chain].NameWrapper?.abi, multi)
+          batch1.push(nameWrapper.getData(wrappedTokenId))
+
+          batch1.push(universalResolveAddr(universalResolver, 'resolver.eth'))
+
+          const results1 = await Promise.all(batch1)
+          let results1Index = 0
+
+          // Get registry owner
+          const registryOwner = results1[results1Index]
+          if (registryOwner && registryOwner !== ethers.constants.AddressZero) {
+            nameData.manager = registryOwner
+          }
+          results1Index++
+
+          if (results1[results1Index] && !(results1[results1Index] instanceof Error) && results1[results1Index].length > 1) {
+            nameData.ethAddress = convertToAddress(results1[results1Index][0])
+            nameData.resolver = results1[results1Index][1]
+          }
+          results1Index++
+
+          if (isETH2LD) {
+            // Get registrar owner
+            if (!(results1[results1Index] instanceof Error)) {
+              nameData.owner = results1[results1Index]
+            } else {
+              try {
+                // TODO: Switch off hosted service
+                const response = await fetch(`https://api.thegraph.com/subgraphs/name/ensdomains/ens${chain === goerli.id ? 'goerli' : ''}`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({query: `query {registration(id:"${labelhash}"){registrant{id}}}`})
+                });
+                const rsp = await response.json();
+                nameData.owner = rsp.data?.registration?.registrant?.id || ''
+              } catch (e) {
+                console.error(e)
+              }
+            }
+            results1Index++
+
+            nameData.expiry = results1[results1Index]
+            results1Index++
+          }
+
+          nameData.isWrapped = registryOwner === nameWrapperAddress
+
+          if (nameData.isWrapped) {
+            // Get wrapped data
+            const data = results1[results1Index]
+            if (data && data.owner) {
+              nameData.owner = data.owner
+              nameData.manager = data.owner
+              nameData.expiry = data.expiry
             }
           }
+          results1Index++
 
-          nameData.expiry = await ethRegistrar.nameExpires(eth2LDTokenId)
-        }
-
-        const nameWrapperAddress = ensConfig[chain].NameWrapper?.address
-        nameData.isWrapped = registryOwner === nameWrapperAddress
-
-        if (nameData.isWrapped) {
-          // Get wrapped data
-          const nameWrapper = new ethers.Contract(nameWrapperAddress, ensConfig[chain].NameWrapper?.abi, provider)
-          const data = await nameWrapper.getData(wrappedTokenId)
-          if (data && data.owner) {
-            nameData.owner = data.owner
-            nameData.manager = data.owner
-            nameData.expiry = data.expiry
+          if (results1[results1Index] && !(results1[results1Index] instanceof Error) && results1[results1Index].length > 1) {
+            nameData.latestPublicResolver = convertToAddress(results1[results1Index][0])
           }
-        }
 
-        nameData.latestPublicResolver = await provider.resolveName('resolver.eth')
+          const batch2 = []
 
-        async function getPrimaryName(provider, address) {
-          const primaryName = await provider.lookupAddress(address)
-          return normalize(primaryName).bestDisplayName
-        }
+          if (nameData.owner && nameData.owner !== ethers.constants.AddressZero) {
+            batch2.push(universalResolvePrimaryName(universalResolver, nameData.owner))
+          }
+          if (nameData.manager && nameData.manager !== ethers.constants.AddressZero) {
+            batch2.push(universalResolvePrimaryName(universalResolver, nameData.manager))
+          }
+          if (nameData.resolver && nameData.resolver !== ethers.constants.AddressZero) {
+            batch2.push(universalResolvePrimaryName(universalResolver, nameData.resolver))
 
-        if (nameData.owner && nameData.owner !== ethers.constants.AddressZero) {
-          nameData.ownerPrimaryName = await getPrimaryName(provider, nameData.owner)
-        }
-        if (nameData.manager && nameData.manager !== ethers.constants.AddressZero) {
-          nameData.managerPrimaryName = await getPrimaryName(provider, nameData.manager)
-        }
-        if (nameData.resolver && nameData.resolver !== ethers.constants.AddressZero) {
-          nameData.resolverPrimaryName = await getPrimaryName(provider, nameData.resolver)
+            // Test if resolver is wrapper aware
+            // Best guess for now is if it supports the new approval methods
+            const resolverContract = new ethers.Contract(nameData.resolver, ensConfig[chain].LatestPublicResolver?.abi, multi)
+            batch2.push(resolverContract.isApprovedForAll(ethers.constants.AddressZero, ethers.constants.AddressZero).catch(e => e))
+          }
+          if (nameData.ethAddress && nameData.ethAddress !== ethers.constants.AddressZero) {
+            batch2.push(universalResolvePrimaryName(universalResolver, nameData.ethAddress))
+          }
 
-          // Test if resolver is wrapper aware
-          // Best guess for now is if it supports the new approval methods
-          try {
-            const resolverContract = new ethers.Contract(nameData.resolver, ensConfig[chain].LatestPublicResolver?.abi, provider)
-            if (!(await resolverContract.isApprovedForAll(ethers.constants.AddressZero, ethers.constants.AddressZero))) {
+          const results2 = await Promise.all(batch2)
+          let results2Index = 0
+          
+          if (nameData.owner && nameData.owner !== ethers.constants.AddressZero) {
+            nameData.ownerPrimaryName = getUniversalResolverPrimaryName(nameData.owner, results2[results2Index])
+            results2Index++
+          }
+          if (nameData.manager && nameData.manager !== ethers.constants.AddressZero) {
+            nameData.managerPrimaryName = getUniversalResolverPrimaryName(nameData.manager, results2[results2Index])
+            results2Index++
+          }
+          if (nameData.resolver && nameData.resolver !== ethers.constants.AddressZero) {
+            nameData.resolverPrimaryName = getUniversalResolverPrimaryName(nameData.resolver, results2[results2Index])
+            results2Index++
+            if (!(results1[results2Index] instanceof Error) && !results2[results2Index]) {
               nameData.isResolverWrapperAware = true
             }
-          } catch (e) {}
-        }
-        if (nameData.ethAddress && nameData.ethAddress !== ethers.constants.AddressZero) {
-          nameData.ethAddressPrimaryName = await getPrimaryName(provider, nameData.ethAddress)
+            results2Index++
+          }
+          if (nameData.ethAddress && nameData.ethAddress !== ethers.constants.AddressZero) {
+            nameData.ethAddressPrimaryName = getUniversalResolverPrimaryName(nameData.ethAddress, results2[results2Index])
+          }
+        } catch (e) {
+          console.error(e)
         }
       }
     }
