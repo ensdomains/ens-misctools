@@ -9,6 +9,7 @@ import { useChain } from '../hooks/misc'
 import { useState } from 'react'
 import { useProvider } from 'wagmi'
 import { ethers } from 'ethers'
+import { MulticallWrapper } from 'ethers-multicall-provider'
 import toast from 'react-hot-toast'
 
 export default function CheckWrapper({
@@ -39,30 +40,47 @@ export default function CheckWrapper({
           wrappedTokenId: parentWrappedTokenId,
         } = parseName(parentName)
 
-        // Get registry owner
-        const registry = new ethers.Contract(ensConfig[chain].Registry?.address, ensConfig[chain].Registry?.abi, provider)
-        const registryOwner = await registry.owner(node)
-        nameData.registryOwner = registryOwner
-        const parentRegistryOwner = await registry.owner(parentNode)
-        nameData.parentRegistryOwner = parentRegistryOwner
+        try {
+          const multi = MulticallWrapper.wrap(provider)
+          const batch = []
 
-        const nameWrapperAddress = ensConfig[chain].NameWrapper?.address
-        nameData.isWrapped = registryOwner === nameWrapperAddress
-        nameData.isParentWrapped = parentRegistryOwner === nameWrapperAddress
+          // Get registry owners
+          const registry = new ethers.Contract(ensConfig[chain].Registry?.address, ensConfig[chain].Registry?.abi, multi)
+          batch.push(registry.owner(node))
+          batch.push(registry.owner(parentNode))
 
-        // Get wrapped data
-        const nameWrapper = new ethers.Contract(nameWrapperAddress, ensConfig[chain].NameWrapper?.abi, provider)
-        const data = await nameWrapper.getData(wrappedTokenId)
-        if (data && data.owner) {
-          nameData.wrappedOwner = data.owner
-          nameData.fuses = data.fuses
-          nameData.expiry = data.expiry
-        }
-        const parentData = await nameWrapper.getData(parentWrappedTokenId)
-        if (parentData && parentData.owner) {
-          nameData.parentWrappedOwner = parentData.owner
-          nameData.parentFuses = parentData.fuses
-          nameData.parentExpiry = parentData.expiry
+          const nameWrapperAddress = ensConfig[chain].NameWrapper?.address
+          nameData.isWrapped = registryOwner === nameWrapperAddress
+          nameData.isParentWrapped = parentRegistryOwner === nameWrapperAddress
+
+          // Get wrapped data
+          const nameWrapper = new ethers.Contract(nameWrapperAddress, ensConfig[chain].NameWrapper?.abi, multi)
+          batch.push(nameWrapper.getData(wrappedTokenId))
+          batch.push(nameWrapper.getData(parentWrappedTokenId))
+
+          const results = await Promise.all(batch)
+
+          // Get registry owners
+          const registryOwner = results[0]
+          nameData.registryOwner = registryOwner
+          const parentRegistryOwner = results[1]
+          nameData.parentRegistryOwner = parentRegistryOwner
+
+          // Get wrapped data
+          const data = results[2]
+          if (data && data.owner) {
+            nameData.wrappedOwner = data.owner
+            nameData.fuses = data.fuses
+            nameData.expiry = data.expiry
+          }
+          const parentData = results[3]
+          if (parentData && parentData.owner) {
+            nameData.parentWrappedOwner = parentData.owner
+            nameData.parentFuses = parentData.fuses
+            nameData.parentExpiry = parentData.expiry
+          }
+        } catch (e) {
+          console.error(e)
         }
       }
     }
