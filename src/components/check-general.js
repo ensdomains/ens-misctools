@@ -293,7 +293,7 @@ export default function CheckGeneral({
         resolverTagInfo2.tag2Color = 'blueSecondary'
         resolverTagInfo2.tag2Tooltip = 'This name is using a parent wildcard resolver.'
         resolverTagInfo2.tag2TooltipDialog = <>
-          This name has no resolver set directly in the ENS registry. However, a parent/ancestor resolver was found that supports ENSIP-10 "Wildcard Resolution".
+          This name has no resolver set directly in the ENS registry. However, a parent/ancestor resolver was found that supports ENSIP-10 &quot;Wildcard Resolution&quot;.
           <br/><br/>
           More information here: <a href="https://docs.ens.domains/ens-improvement-proposals/ensip-10-wildcard-resolution">Wildcard Resolution</a>
         </>
@@ -304,7 +304,7 @@ export default function CheckGeneral({
         managerTagInfo.tagColor = 'blueSecondary'
         managerTagInfo.tagTooltip = 'This name does not exist on-chain.'
         managerTagInfo.tagTooltipDialog = <>
-          This name has no owner set directly in the ENS registry. However, its resolver supports EIP-3668 "CCIP-read", meaning that records can be resolved via an off-chain gateway.
+          This name has no owner set directly in the ENS registry. However, its resolver supports EIP-3668 &quot;CCIP-read&quot;, meaning that records can be resolved via an off-chain gateway.
           {(!nameData.ethAddress || nameData.ethAddress === ethers.constants.AddressZero) && (
             <>
               <br/><br/>
