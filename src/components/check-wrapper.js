@@ -3,7 +3,7 @@ import { Card, Heading, Typography } from '@ensdomains/thorin'
 import RecordItemRow from './recorditemrow'
 import Fusebox from './fusebox'
 import { ensConfig } from '../lib/constants'
-import { validChain, normalize, parseName, hasExpiry, parseExpiry } from '../lib/utils'
+import { validChain, normalize, parseName, hasExpiry, parseExpiry, getAddress } from '../lib/utils'
 import useCache from '../hooks/cache'
 import { useChain } from '../hooks/misc'
 import { useState } from 'react'
@@ -50,8 +50,6 @@ export default function CheckWrapper({
           batch.push(registry.owner(parentNode))
 
           const nameWrapperAddress = ensConfig[chain].NameWrapper?.address
-          nameData.isWrapped = registryOwner === nameWrapperAddress
-          nameData.isParentWrapped = parentRegistryOwner === nameWrapperAddress
 
           // Get wrapped data
           const nameWrapper = new ethers.Contract(nameWrapperAddress, ensConfig[chain].NameWrapper?.abi, multi)
@@ -62,20 +60,23 @@ export default function CheckWrapper({
 
           // Get registry owners
           const registryOwner = results[0]
-          nameData.registryOwner = registryOwner
+          nameData.registryOwner = getAddress(registryOwner)
           const parentRegistryOwner = results[1]
-          nameData.parentRegistryOwner = parentRegistryOwner
+          nameData.parentRegistryOwner = getAddress(parentRegistryOwner)
+
+          nameData.isWrapped = registryOwner === nameWrapperAddress
+          nameData.isParentWrapped = parentRegistryOwner === nameWrapperAddress
 
           // Get wrapped data
           const data = results[2]
           if (data && data.owner) {
-            nameData.wrappedOwner = data.owner
+            nameData.wrappedOwner = getAddress(data.owner)
             nameData.fuses = data.fuses
             nameData.expiry = data.expiry
           }
           const parentData = results[3]
           if (parentData && parentData.owner) {
-            nameData.parentWrappedOwner = parentData.owner
+            nameData.parentWrappedOwner = getAddress(parentData.owner)
             nameData.parentFuses = parentData.fuses
             nameData.parentExpiry = parentData.expiry
           }

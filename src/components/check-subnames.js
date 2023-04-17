@@ -2,7 +2,7 @@ import styles from '../styles/Check.module.css'
 import { Card, Heading, Typography } from '@ensdomains/thorin'
 import RecordItemRow from './recorditemrow'
 import { ensConfig } from '../lib/constants'
-import { validChain, normalize, parseName, hasExpiry, parseExpiry } from '../lib/utils'
+import { validChain, normalize, parseName, hasExpiry, parseExpiry, getAddress } from '../lib/utils'
 import useCache from '../hooks/cache'
 import { useChain } from '../hooks/misc'
 import { useState, } from 'react'
@@ -54,13 +54,13 @@ export default function CheckSubnames({
 
             // Get registry owners
             const registryResults = await Promise.all(subs.map(subdomain => registry.owner(subdomain.id)))
-            registryResults.forEach((result, index) => {subs[index].registryOwner = result})
+            registryResults.forEach((result, index) => {subs[index].registryOwner = getAddress(result)})
 
             // Get wrapped data
             const wrapperResults = await Promise.all(subs.map(subdomain => nameWrapper.getData(subdomain.id)))
             wrapperResults.forEach((result, index) => {
               subs[index].wrapperData = {
-                owner: result.owner,
+                owner: getAddress(result.owner),
                 fuses: result.fuses,
                 expiry: result.expiry
               }

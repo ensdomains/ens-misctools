@@ -10,6 +10,7 @@ import {
   universalResolvePrimaryName,
   getUniversalResolverPrimaryName,
   convertToAddress,
+  getAddress,
   shortAddr,
   parseExpiry
 } from '../lib/utils'
@@ -54,6 +55,7 @@ export default function CheckGeneral({
           // Get registry owner
           const registry = new ethers.Contract(ensConfig[chain].Registry?.address, ensConfig[chain].Registry?.abi, multi)
           batch1.push(registry.owner(node))
+          batch1.push(registry.resolver(node))
 
           const universalResolver = new ethers.Contract(ensConfig[chain].UniversalResolver?.address, ensConfig[chain].UniversalResolver?.abi, multi)
           batch1.push(universalResolveAddr(universalResolver, normalizedName, node))
@@ -77,20 +79,28 @@ export default function CheckGeneral({
           // Get registry owner
           const registryOwner = results1[results1Index]
           if (registryOwner && registryOwner !== ethers.constants.AddressZero) {
-            nameData.manager = registryOwner
+            nameData.manager = getAddress(registryOwner)
           }
           results1Index++
 
+          // Get registry resolver
+          const registryResolver = results1[results1Index]
+          if (registryResolver && registryResolver !== ethers.constants.AddressZero) {
+            nameData.registryResolver = getAddress(registryResolver)
+          }
+          results1Index++
+
+          // Get resolver and ETH address (possibly via wildcard or offchain)
           if (results1[results1Index] && !(results1[results1Index] instanceof Error) && results1[results1Index].length > 1) {
             nameData.ethAddress = convertToAddress(results1[results1Index][0])
-            nameData.resolver = results1[results1Index][1]
+            nameData.resolver = getAddress(results1[results1Index][1])
           }
           results1Index++
 
           if (isETH2LD) {
             // Get registrar owner
             if (!(results1[results1Index] instanceof Error)) {
-              nameData.owner = results1[results1Index]
+              nameData.owner = getAddress(results1[results1Index])
             } else {
               try {
                 // TODO: Switch off hosted service
@@ -100,7 +110,7 @@ export default function CheckGeneral({
                   body: JSON.stringify({query: `query {registration(id:"${labelhash}"){registrant{id}}}`})
                 });
                 const rsp = await response.json();
-                nameData.owner = rsp.data?.registration?.registrant?.id || ''
+                nameData.owner = getAddress(rsp.data?.registration?.registrant?.id || '')
               } catch (e) {
                 console.error(e)
               }
@@ -117,8 +127,8 @@ export default function CheckGeneral({
             // Get wrapped data
             const data = results1[results1Index]
             if (data && data.owner) {
-              nameData.owner = data.owner
-              nameData.manager = data.owner
+              nameData.owner = getAddress(data.owner)
+              nameData.manager = getAddress(data.owner)
               nameData.expiry = data.expiry
             }
           }
@@ -197,7 +207,9 @@ export default function CheckGeneral({
   }
 
   const ownerTagInfo = {}
+  const managerTagInfo = {}
   const resolverTagInfo = {}
+  const resolverTagInfo2 = {}
   const ethAddressTagInfo = {}
   let expiryStr = ''
   const expiryTagInfo = {}
@@ -275,9 +287,37 @@ export default function CheckGeneral({
           More information here: <a href="https://support.ens.domains/core/records/resolver">Resolver</a>
         </>
       }
+
+      if (!nameData.registryResolver) {
+        resolverTagInfo2.tag2 = 'Using Wildcard'
+        resolverTagInfo2.tag2Color = 'blueSecondary'
+        resolverTagInfo2.tag2Tooltip = 'This name is using a parent wildcard resolver.'
+        resolverTagInfo2.tag2TooltipDialog = <>
+          This name has no resolver set directly in the ENS registry. However, a parent/ancestor resolver was found that supports ENSIP-10 "Wildcard Resolution".
+          <br/><br/>
+          More information here: <a href="https://docs.ens.domains/ens-improvement-proposals/ensip-10-wildcard-resolution">Wildcard Resolution</a>
+        </>
+      }
+
+      if (!nameData.manager) {
+        managerTagInfo.tag = 'Offchain Name'
+        managerTagInfo.tagColor = 'blueSecondary'
+        managerTagInfo.tagTooltip = 'This name does not exist on-chain.'
+        managerTagInfo.tagTooltipDialog = <>
+          This name has no owner set directly in the ENS registry. However, its resolver supports EIP-3668 "CCIP-read", meaning that records can be resolved via an off-chain gateway.
+          {(!nameData.ethAddress || nameData.ethAddress === ethers.constants.AddressZero) && (
+            <>
+              <br/><br/>
+              No ETH address (or the null address) was resolved for this name, however. So this name may not exist in the off-chain gateway, either.
+            </>
+          )}          
+          <br/><br/>
+          More information here: <a href="https://eips.ethereum.org/EIPS/eip-3668">CCIP Read: Secure offchain data retrieval</a>
+        </>
+      }
     }
 
-    if (nameData.manager && !nameData.ethAddress) {
+    if (nameData.manager && (!nameData.ethAddress || nameData.ethAddress === ethers.constants.AddressZero)) {
       ethAddressTagInfo.tag = 'No ETH Address Set'
       ethAddressTagInfo.tagColor = 'yellowSecondary'
       ethAddressTagInfo.tagTooltip = 'This name does not currently point to any ETH address.'
@@ -361,9 +401,9 @@ export default function CheckGeneral({
         <table className={styles.itemTable}>
           <tbody>
             {nameData.owner ? <RecordItemRow loading={showLoading} label="Owner" value={nameData.owner} secondaryValue={nameData.ownerPrimaryName} shortValue={shortAddr(nameData.owner)} tooltipValue={nameData.owner} {...ownerTagInfo}/> : <></>}
-            <RecordItemRow loading={showLoading} label="Manager" value={nameData.manager} secondaryValue={nameData.managerPrimaryName} shortValue={shortAddr(nameData.manager)} tooltipValue={nameData.manager}/>
+            <RecordItemRow loading={showLoading} label="Manager" value={nameData.manager} secondaryValue={nameData.managerPrimaryName} shortValue={shortAddr(nameData.manager)} tooltipValue={nameData.manager} {...managerTagInfo}/>
             {expiryStr ? <RecordItemRow loading={showLoading} label="Expiry" value={expiryStr} {...expiryTagInfo}/> : <></>}
-            <RecordItemRow loading={showLoading} label="Resolver" value={nameData.resolver} secondaryValue={nameData.resolverPrimaryName} shortValue={shortAddr(nameData.resolver)} tooltipValue={nameData.resolver} {...resolverTagInfo}/>
+            <RecordItemRow loading={showLoading} label="Resolver" value={nameData.resolver} secondaryValue={nameData.resolverPrimaryName} shortValue={shortAddr(nameData.resolver)} tooltipValue={nameData.resolver} {...resolverTagInfo} {...resolverTagInfo2}/>
             <RecordItemRow loading={showLoading} label="ETH" icon={<EthSVG/>} value={nameData.ethAddress} secondaryValue={nameData.ethAddressPrimaryName} shortValue={shortAddr(nameData.ethAddress)} tooltipValue={nameData.ethAddress} {...ethAddressTagInfo}/>
           </tbody>
         </table>
@@ -376,6 +416,7 @@ function defaultNameData() {
   return {
     owner: '',
     manager: '',
+    registryResolver: '',
     resolver: '',
     ethAddress: '',
     expiry: 0,

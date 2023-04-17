@@ -43,7 +43,7 @@ export function encodeMethodData(method, data, format) {
 
 export function convertToAddress(bytes32) {
   try {
-    return ethers.utils.defaultAbiCoder.decode(['address'], bytes32)[0]
+    return getAddress(ethers.utils.defaultAbiCoder.decode(['address'], bytes32)[0])
   } catch (e) {
     console.error(e)
     return ''
@@ -66,10 +66,21 @@ export function universalResolvePrimaryName(universalResolver, address) {
 }
 
 export function getUniversalResolverPrimaryName(address, result) {
-  if (result && !(result instanceof Error) && result.length > 1 && result[1] === address) {
+  if (result && !(result instanceof Error) && result.length > 1 && getAddress(result[1]) === getAddress(address)) {
     return normalize(result[0]).bestDisplayName
   }
   return ''
+}
+
+export function getAddress(address) {
+  if (address) {
+    try {
+      address = ethers.utils.getAddress(address)
+    } catch (e) {
+      console.error(e)
+    }
+  }
+  return address
 }
 
 export function normalize(name) {
