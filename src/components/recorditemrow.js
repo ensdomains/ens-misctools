@@ -100,15 +100,11 @@ export default function RecordItemRow({
   tag2Color,
   tag2Icon,
   tag2Tooltip,
-  tag2TooltipDialog
+  tag2TooltipDialog,
+  tags
 }) {
-  let tIcon = tagIcon
-  if (!tIcon) {
-    tIcon = containsIgnoreCase(tagColor, 'red') ? <CrossCircleSVG/> : containsIgnoreCase(tagColor, 'green') ? <CheckCircleSVG/> : <InfoCircleSVG/>
-  }
-  let t2Icon = tag2Icon
-  if (!t2Icon) {
-    t2Icon = containsIgnoreCase(tag2Color, 'red') ? <CrossCircleSVG/> : containsIgnoreCase(tag2Color, 'green') ? <CheckCircleSVG/> : <InfoCircleSVG/>
+  const getIcon = (icon, color) => {
+    return icon || (containsIgnoreCase(color, 'red') ? <CrossCircleSVG/> : containsIgnoreCase(color, 'green') ? <CheckCircleSVG/> : <InfoCircleSVG/>)
   }
 
   return (
@@ -146,7 +142,7 @@ export default function RecordItemRow({
             {tag && !loading &&
               <TagWithTooltip
                 tagValue={tag}
-                tagIcon={tIcon}
+                tagIcon={getIcon(tagIcon, tagColor)}
                 tooltipValue={tagTooltip}
                 tooltipDialogValue={tagTooltipDialog}
                 colorStyle={tagColor}
@@ -156,13 +152,26 @@ export default function RecordItemRow({
             {tag2 && !loading &&
               <TagWithTooltip
                 tagValue={tag2}
-                tagIcon={t2Icon}
+                tagIcon={getIcon(tag2Icon, tag2Color)}
                 tooltipValue={tag2Tooltip}
                 tooltipDialogValue={tag2TooltipDialog}
                 colorStyle={tag2Color}
                 size="medium"
               />
             }
+            {tags && tags.length > 0 && tags.map((tag) => {
+              return (
+                <TagWithTooltip
+                  key={tag.value}
+                  tagValue={tag.value}
+                  tagIcon={getIcon(tag.icon)}
+                  tooltipValue={tag.tooltip}
+                  tooltipDialogValue={tag.tooltipDialog}
+                  colorStyle={tag.color}
+                  size="medium"
+                />
+              )
+            })}
           </div>
         </div>
       </td>
