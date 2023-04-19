@@ -35,19 +35,22 @@ export default function CheckSubnames({
       if (isNameValid && validChain(chain, chains)) {
         const {
           node,
+          level
         } = parseName(normalizedName)
 
-        try {
-          // TODO: Switch off hosted service
-          const countResponse = await fetch(`https://api.thegraph.com/subgraphs/name/ensdomains/ens${chain === goerli.id ? 'goerli' : ''}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({query: `query {domain(id:"${node}"){subdomainCount}}`})
-          });
-          const countRsp = await countResponse.json();
-          totalPages = Math.ceil((countRsp.data?.domain?.subdomainCount || 0) / 10)
-        } catch (e) {
-          console.error(e)
+        if (level >= 2) {
+          try {
+            // TODO: Switch off hosted service
+            const countResponse = await fetch(`https://api.thegraph.com/subgraphs/name/ensdomains/ens${chain === goerli.id ? 'goerli' : ''}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({query: `query {domain(id:"${node}"){subdomainCount}}`})
+            });
+            const countRsp = await countResponse.json();
+            totalPages = Math.ceil((countRsp.data?.domain?.subdomainCount || 0) / 10)
+          } catch (e) {
+            console.error(e)
+          }
         }
       }
     }
@@ -79,43 +82,46 @@ export default function CheckSubnames({
       if (isNameValid && validChain(chain, chains)) {
         const {
           node,
+          level
         } = parseName(normalizedName)
 
-        try {
-          const multi = MulticallWrapper.wrap(provider)
-          const registry = new ethers.Contract(ensConfig[chain].Registry?.address, ensConfig[chain].Registry?.abi, multi)
-          const nameWrapper = new ethers.Contract(ensConfig[chain].NameWrapper?.address, ensConfig[chain].NameWrapper?.abi, multi)
+        if (level >= 2) {
+          try {
+            const multi = MulticallWrapper.wrap(provider)
+            const registry = new ethers.Contract(ensConfig[chain].Registry?.address, ensConfig[chain].Registry?.abi, multi)
+            const nameWrapper = new ethers.Contract(ensConfig[chain].NameWrapper?.address, ensConfig[chain].NameWrapper?.abi, multi)
 
-          // TODO: Switch off hosted service
-          let limit = PAGE_SIZE
-          let offset = (page - 1) * limit
-          const response = await fetch(`https://api.thegraph.com/subgraphs/name/ensdomains/ens${chain === goerli.id ? 'goerli' : ''}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({query: `query {domain(id:"${node}"){subdomains(orderBy:labelhash,first:${limit},skip:${offset}){id labelName labelhash}}}`})
-          });
-          const rsp = await response.json();
+            // TODO: Switch off hosted service
+            let limit = PAGE_SIZE
+            let offset = (page - 1) * limit
+            const response = await fetch(`https://api.thegraph.com/subgraphs/name/ensdomains/ens${chain === goerli.id ? 'goerli' : ''}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({query: `query {domain(id:"${node}"){subdomains(orderBy:labelhash,first:${limit},skip:${offset}){id labelName labelhash}}}`})
+            });
+            const rsp = await response.json();
 
-          let subs = rsp.data?.domain?.subdomains || []
+            let subs = rsp.data?.domain?.subdomains || []
 
-          // Get registry owners
-          const registryResults = await Promise.all(subs.map(subdomain => registry.owner(subdomain.id)))
-          registryResults.forEach((result, index) => {subs[index].registryOwner = getAddress(result)})
+            // Get registry owners
+            const registryResults = await Promise.all(subs.map(subdomain => registry.owner(subdomain.id)))
+            registryResults.forEach((result, index) => {subs[index].registryOwner = getAddress(result)})
 
-          // Get wrapped data
-          const wrapperResults = await Promise.all(subs.map(subdomain => nameWrapper.getData(subdomain.id)))
-          wrapperResults.forEach((result, index) => {
-            subs[index].wrapperData = {
-              owner: getAddress(result.owner),
-              fuses: result.fuses,
-              expiry: result.expiry
-            }
-          })
-          
-          nameData.subdomains[page] = subs
-          nameData.success = true
-        } catch (e) {
-          console.error(e)
+            // Get wrapped data
+            const wrapperResults = await Promise.all(subs.map(subdomain => nameWrapper.getData(subdomain.id)))
+            wrapperResults.forEach((result, index) => {
+              subs[index].wrapperData = {
+                owner: getAddress(result.owner),
+                fuses: result.fuses,
+                expiry: result.expiry
+              }
+            })
+            
+            nameData.subdomains[page] = subs
+            nameData.success = true
+          } catch (e) {
+            console.error(e)
+          }
         }
 
         nameData.loaded = true
@@ -315,7 +321,7 @@ export default function CheckSubnames({
         ) : name && (
           <Typography>Skipping subname checks for invalid name.</Typography>
         )}
-        {totalPages > 1 && (
+        {hasProvider && isNameValid && level >= 2 && totalPages > 1 && (
           <PageButtons
             alwaysShowFirst
             alwaysShowLast
