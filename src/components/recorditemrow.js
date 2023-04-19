@@ -91,16 +91,6 @@ export default function RecordItemRow({
   secondaryLabel,
   secondaryValue,
   secondaryIcon,
-  tag,
-  tagColor,
-  tagIcon,
-  tagTooltip,
-  tagTooltipDialog,
-  tag2,
-  tag2Color,
-  tag2Icon,
-  tag2Tooltip,
-  tag2TooltipDialog,
   tags
 }) {
   const getIcon = (icon, color) => {
@@ -124,7 +114,7 @@ export default function RecordItemRow({
       <td>
         <div className={styles.recorditemtagtd}>
           { secondaryValue &&
-            <div style={(tag && !loading) ? {paddingRight:'1rem'} : {}}>
+            <div style={(tags && tags.length > 0 && !loading) ? {paddingRight:'1rem'} : {}}>
               <Skeleton loading={loading}>
                 <RecordItem
                   keyLabel={secondaryLabel}
@@ -139,26 +129,6 @@ export default function RecordItemRow({
             </div>
           }
           <div className={styles.recorditemtagdiv}>
-            {tag && !loading &&
-              <TagWithTooltip
-                tagValue={tag}
-                tagIcon={getIcon(tagIcon, tagColor)}
-                tooltipValue={tagTooltip}
-                tooltipDialogValue={tagTooltipDialog}
-                colorStyle={tagColor}
-                size="medium"
-              />
-            }
-            {tag2 && !loading &&
-              <TagWithTooltip
-                tagValue={tag2}
-                tagIcon={getIcon(tag2Icon, tag2Color)}
-                tooltipValue={tag2Tooltip}
-                tooltipDialogValue={tag2TooltipDialog}
-                colorStyle={tag2Color}
-                size="medium"
-              />
-            }
             {tags && tags.length > 0 && tags.map((tag) => {
               return (
                 <TagWithTooltip

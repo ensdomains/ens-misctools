@@ -168,8 +168,6 @@ export default function CheckSubnames({
     subs = nameData.subdomains[page] || []
 
     subnameRows = subs.map((subdomain, index) => {
-      const stateTagInfo = {}
-      const expiryTagInfo = {}
       const tags = []
 
       if (subdomain.wrapperData) {
@@ -180,37 +178,41 @@ export default function CheckSubnames({
 
         if (subdomain.wrapperData.owner !== ethers.constants.AddressZero) {
           if (isLocked) {
-            stateTagInfo.tag = 'Locked'
-            stateTagInfo.tagColor = 'yellowSecondary'
-            stateTagInfo.tagTooltip = 'This subname can no longer be unwrapped.'
-            stateTagInfo.tagTooltipDialog = <>
-              The parent owner also cannot delete/replace this name, or burn any additional fuses.
-              <br/><br/>
-              Be aware of the implications, especially if you are planning on purchasing the parent name &quot;<Typography>{bestDisplayName}</Typography>&quot;.
-              <br/><br/>
-              Even if the parent name is purchased / transferred, you will <b>not be able to replace</b> this subname.
-              <br/><br/>
-              This will be true until the subname expiry on <b>{expiryStr}</b>.
-              <br/><br/>
-              When the expiry is reached, the owner will lose ownership of this subname, and the parent owner will then be able to recreate/replace it.
-              <br/><br/>
-              More information here: <a href="https://support.ens.domains/dev-basics/namewrapper/expiry">Expiry</a>
-            </>
+            tags.push({
+              value: 'Locked',
+              color: 'yellowSecondary',
+              tooltip: 'This subname can no longer be unwrapped.',
+              tooltipDialog: <>
+                The parent owner also cannot delete/replace this name, or burn any additional fuses.
+                <br/><br/>
+                Be aware of the implications, especially if you are planning on purchasing the parent name &quot;<Typography>{bestDisplayName}</Typography>&quot;.
+                <br/><br/>
+                Even if the parent name is purchased / transferred, you will <b>not be able to replace</b> this subname.
+                <br/><br/>
+                This will be true until the subname expiry on <b>{expiryStr}</b>.
+                <br/><br/>
+                When the expiry is reached, the owner will lose ownership of this subname, and the parent owner will then be able to recreate/replace it.
+                <br/><br/>
+                More information here: <a href="https://support.ens.domains/dev-basics/namewrapper/expiry">Expiry</a>
+              </>
+            })
           } else if (isEmancipated) {
-            stateTagInfo.tag = 'Emancipated'
-            stateTagInfo.tagColor = 'yellowSecondary'
-            stateTagInfo.tagTooltip = <>This name can no longer be deleted/replaced by the owner of the parent name &quot;<Typography>{bestDisplayName}</Typography>&quot;.</>
-            stateTagInfo.tagTooltipDialog = <>
-              Be aware of the implications, especially if you are planning on purchasing the parent name &quot;<Typography>{bestDisplayName}</Typography>&quot;.
-              <br/><br/>
-              Even if the parent name is purchased / transferred, you will <b>not be able to replace</b> this subname.
-              <br/><br/>
-              This will be true until the subname expiry on <b>{expiryStr}</b>.
-              <br/><br/>
-              When the expiry is reached, the owner will lose ownership of this subname, and the parent owner will then be able to recreate/replace it.
-              <br/><br/>
-              More information here: <a href="https://support.ens.domains/dev-basics/namewrapper/expiry">Expiry</a>
-            </>
+            tags.push({
+              value: 'Emancipated',
+              color: 'yellowSecondary',
+              tooltip: <>This name can no longer be deleted/replaced by the owner of the parent name &quot;<Typography>{bestDisplayName}</Typography>&quot;.</>,
+              tooltipDialog: <>
+                Be aware of the implications, especially if you are planning on purchasing the parent name &quot;<Typography>{bestDisplayName}</Typography>&quot;.
+                <br/><br/>
+                Even if the parent name is purchased / transferred, you will <b>not be able to replace</b> this subname.
+                <br/><br/>
+                This will be true until the subname expiry on <b>{expiryStr}</b>.
+                <br/><br/>
+                When the expiry is reached, the owner will lose ownership of this subname, and the parent owner will then be able to recreate/replace it.
+                <br/><br/>
+                More information here: <a href="https://support.ens.domains/dev-basics/namewrapper/expiry">Expiry</a>
+              </>
+            })
           }
         }
 
@@ -220,23 +222,27 @@ export default function CheckSubnames({
           const days90Ms = 90 * 24 * 60 * 60 * 1000
 
           if (nowMs >= epochMs && subdomain.wrapperData.owner === ethers.constants.AddressZero) {
-            expiryTagInfo.tag2 = 'Expired'
-            expiryTagInfo.tag2Color = 'redSecondary'
-            expiryTagInfo.tag2Tooltip = 'This subname is expired.'
-            expiryTagInfo.tag2TooltipDialog = <>
-              It expired on {expiryStr}.
-              <br/><br/>
-              The parent owner can now recreate/replace this name.
-            </>
+            tags.push({
+              value: 'Expired',
+              color: 'redSecondary',
+              tooltip: 'This subname is expired.',
+              tooltipDialog: <>
+                It expired on {expiryStr}.
+                <br/><br/>
+                The parent owner can now recreate/replace this name.
+              </>
+            })
           } else if (nowMs < epochMs && nowMs + days90Ms >= epochMs && isEmancipated) {
-            expiryTagInfo.tag2 = 'Expiring Soon'
-            expiryTagInfo.tag2Color = 'yellowSecondary'
-            expiryTagInfo.tag2Tooltip = 'This subname is expiring soon.'
-            expiryTagInfo.tag2TooltipDialog = <>
-              It will expire on {expiryStr}.
-              <br/><br/>
-              If it is not renewed, then the owner will lose ownership of the subname, and the parent owner will then be able to recreate/replace this subname.
-            </>
+            tags.push({
+              value: 'Expiring Soon',
+              color: 'yellowSecondary',
+              tooltip: 'This subname is expiring soon.',
+              tooltipDialog: <>
+                It will expire on {expiryStr}.
+                <br/><br/>
+                If it is not renewed, then the owner will lose ownership of the subname, and the parent owner will then be able to recreate/replace this subname.
+              </>
+            })
           }
         }
       }
@@ -270,7 +276,7 @@ export default function CheckSubnames({
       const labelShortValue = subdomain.labelName || convertLabelhash(subdomain.labelhash)
 
       return (
-        <RecordItemRow loading={showLoading} label="Label" value={labelValue} shortValue={labelShortValue} key={subdomain.labelhash || 'sub' + index} {...stateTagInfo} {...expiryTagInfo} tags={tags}/>
+        <RecordItemRow loading={showLoading} label="Label" value={labelValue} shortValue={labelShortValue} key={subdomain.labelhash || 'sub' + index} tags={tags}/>
       )
     })
   }

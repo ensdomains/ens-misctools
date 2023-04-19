@@ -206,13 +206,12 @@ export default function CheckGeneral({
     showLoading = true
   }
 
-  const ownerTagInfo = {}
-  const managerTagInfo = {}
-  const resolverTagInfo = {}
-  const resolverTagInfo2 = {}
-  const ethAddressTagInfo = {}
+  const ownerTags = []
+  const managerTags = []
+  const resolverTags = []
+  const ethAddressTags = []
   let expiryStr = ''
-  const expiryTagInfo = {}
+  const expiryTags = []
 
   if (!showLoading && validChain(chain, chains)) {
     const {
@@ -224,9 +223,11 @@ export default function CheckGeneral({
     } = parseName(normalizedName)
 
     if (nameData.isWrapped) {
-      ownerTagInfo.tag = 'Wrapped'
-      ownerTagInfo.tagColor = 'blueSecondary'
-      ownerTagInfo.tagTooltip = 'This name is wrapped in the ENS Name Wrapper contract.'
+      ownerTags.push({
+        value: 'Wrapped',
+        color: 'blueSecondary',
+        tooltip: 'This name is wrapped in the ENS Name Wrapper contract.'
+      })
     }
 
     let noResolverSet = false
@@ -238,101 +239,115 @@ export default function CheckGeneral({
       }
 
       if (nameData.resolver === lpResolver) {
-        resolverTagInfo.tag = 'Latest Public Resolver'
-        resolverTagInfo.tagColor = 'blueSecondary'
-        resolverTagInfo.tagTooltip = 'This name is using the latest version of the Public Resolver contract.'
+        resolverTags.push({
+          value: 'Latest Public Resolver',
+          color: 'blueSecondary',
+          tooltip: 'This name is using the latest version of the Public Resolver contract.'
+        })
       } else if (publicResolvers.length > 0 && publicResolvers.includes(nameData.resolver)) {
-        resolverTagInfo.tag = 'Old Public Resolver'
-        resolverTagInfo.tagColor = 'yellowSecondary'
-        resolverTagInfo.tagTooltip = 'This name is using an older version of the Public Resolver contract.'
-        resolverTagInfo.tagTooltipDialog = <>
-          {(nameData.isWrapped && !nameData.isResolverWrapperAware) ? (<>
-            Your name is currently wrapped, but the resolver you&apos;re using is not &quot;wrapper aware&quot;.
-            This means that the resolver does not correctly recognize you as the owner.
-            <br/><br/>
-            You should upgrade to the latest Public Resolver contract.
-          </>) : (<>
-            This is typically not an issue, your name will continue to resolve to records just fine.
-            {!nameData.isWrapped && !nameData.isResolverWrapperAware && (<>
+        resolverTags.push({
+          value: 'Old Public Resolver',
+          color: 'yellowSecondary',
+          tooltip: 'This name is using an older version of the Public Resolver contract.',
+          tooltipDialog: <>
+            {(nameData.isWrapped && !nameData.isResolverWrapperAware) ? (<>
+              Your name is currently wrapped, but the resolver you&apos;re using is not &quot;wrapper aware&quot;.
+              This means that the resolver does not correctly recognize you as the owner.
               <br/><br/>
-              However, if you wrap your name in the Name Wrapper, you will need to also migrate to the latest Public Resolver contract.
+              You should upgrade to the latest Public Resolver contract.
+            </>) : (<>
+              This is typically not an issue, your name will continue to resolve to records just fine.
+              {!nameData.isWrapped && !nameData.isResolverWrapperAware && (<>
+                <br/><br/>
+                However, if you wrap your name in the Name Wrapper, you will need to also migrate to the latest Public Resolver contract.
+              </>)}
             </>)}
-          </>)}
-          <br/><br/>
-          More information here: <a href="https://support.ens.domains/core/records/resolver">Resolver</a>
-        </>
+            <br/><br/>
+            More information here: <a href="https://support.ens.domains/core/records/resolver">Resolver</a>
+          </>
+        })
       } else if (nameData.resolver === ethers.constants.AddressZero) {
         noResolverSet = true
-        resolverTagInfo.tag = 'No Resolver Set'
-        resolverTagInfo.tagColor = 'yellowSecondary'
-        resolverTagInfo.tagTooltip = 'There is no resolver contract set on this name.'
-        resolverTagInfo.tagTooltipDialog = <>
-          An ENS name will not resolve to any records (such as an ETH address) unless a <a href="https://support.ens.domains/core/records/resolver">Resolver</a> is first set on the name.
-          <br/><br/>
-          If you are trying to set the name as your <a href="https://support.ens.domains/core/records/primary-name">Primary Name</a> and it doesn&apos;t show up in the list, this is why.
-          <br/><br/>
-          First set the Resolver to the default Public Resolver. Then update the ETH address record to the address you want this ENS name to point to.
-          <br/><br/>
-          More information here: <a href="https://support.ens.domains/core/records/resolver">Resolver</a>
-        </>
+        resolverTags.push({
+          value: 'No Resolver Set',
+          color: 'yellowSecondary',
+          tooltip: 'There is no resolver contract set on this name.',
+          tooltipDialog: <>
+            An ENS name will not resolve to any records (such as an ETH address) unless a <a href="https://support.ens.domains/core/records/resolver">Resolver</a> is first set on the name.
+            <br/><br/>
+            If you are trying to set the name as your <a href="https://support.ens.domains/core/records/primary-name">Primary Name</a> and it doesn&apos;t show up in the list, this is why.
+            <br/><br/>
+            First set the Resolver to the default Public Resolver. Then update the ETH address record to the address you want this ENS name to point to.
+            <br/><br/>
+            More information here: <a href="https://support.ens.domains/core/records/resolver">Resolver</a>
+          </>
+        })
       } else {
-        resolverTagInfo.tag = 'Custom Resolver'
-        resolverTagInfo.tagColor = 'blueSecondary'
-        resolverTagInfo.tagTooltip = 'This name is using a custom resolver contract.'
-        resolverTagInfo.tagTooltipDialog = <>
-          This may be expected if this name is being used in conjunction with a custom project.
-          <br/><br/>
-          However, if you do not recognize this contract, then you can choose to update it to the Latest Public Resolver, and then re-set any records.
-          <br/><br/>
-          More information here: <a href="https://support.ens.domains/core/records/resolver">Resolver</a>
-        </>
+        resolverTags.push({
+          value: 'Custom Resolver',
+          color: 'blueSecondary',
+          tooltip: 'This name is using a custom resolver contract.',
+          tooltipDialog: <>
+            This may be expected if this name is being used in conjunction with a custom project.
+            <br/><br/>
+            However, if you do not recognize this contract, then you can choose to update it to the Latest Public Resolver, and then re-set any records.
+            <br/><br/>
+            More information here: <a href="https://support.ens.domains/core/records/resolver">Resolver</a>
+          </>
+        })
       }
 
       if (!nameData.registryResolver) {
-        resolverTagInfo2.tag2 = 'Using Wildcard'
-        resolverTagInfo2.tag2Color = 'blueSecondary'
-        resolverTagInfo2.tag2Tooltip = 'This name is using a parent wildcard resolver.'
-        resolverTagInfo2.tag2TooltipDialog = <>
-          This name has no resolver set directly in the ENS registry. However, a parent/ancestor resolver was found that supports ENSIP-10 &quot;Wildcard Resolution&quot;.
-          <br/><br/>
-          More information here: <a href="https://docs.ens.domains/ens-improvement-proposals/ensip-10-wildcard-resolution">Wildcard Resolution</a>
-        </>
+        resolverTags.push({
+          value: 'Using Wildcard',
+          color: 'blueSecondary',
+          tooltip: 'This name is using a parent wildcard resolver.',
+          tooltipDialog: <>
+            This name has no resolver set directly in the ENS registry. However, a parent/ancestor resolver was found that supports ENSIP-10 &quot;Wildcard Resolution&quot;.
+            <br/><br/>
+            More information here: <a href="https://docs.ens.domains/ens-improvement-proposals/ensip-10-wildcard-resolution">Wildcard Resolution</a>
+          </>
+        })
       }
 
       if (!nameData.manager) {
-        managerTagInfo.tag = 'Offchain Name'
-        managerTagInfo.tagColor = 'blueSecondary'
-        managerTagInfo.tagTooltip = 'This name does not exist on-chain.'
-        managerTagInfo.tagTooltipDialog = <>
-          This name has no owner set directly in the ENS registry. However, its resolver supports EIP-3668 &quot;CCIP-read&quot;, meaning that records can be resolved via an off-chain gateway.
-          {(!nameData.ethAddress || nameData.ethAddress === ethers.constants.AddressZero) && (
-            <>
-              <br/><br/>
-              No ETH address (or the null address) was resolved for this name, however. So this name may not exist in the off-chain gateway, either.
-            </>
-          )}          
-          <br/><br/>
-          More information here: <a href="https://eips.ethereum.org/EIPS/eip-3668">CCIP Read: Secure offchain data retrieval</a>
-        </>
+        managerTags.push({
+          value: 'Offchain Name',
+          color: 'blueSecondary',
+          tooltip: 'This name does not exist on-chain.',
+          tooltipDialog: <>
+            This name has no owner set directly in the ENS registry. However, its resolver supports EIP-3668 &quot;CCIP-read&quot;, meaning that records can be resolved via an off-chain gateway.
+            {(!nameData.ethAddress || nameData.ethAddress === ethers.constants.AddressZero) && (
+              <>
+                <br/><br/>
+                No ETH address (or the null address) was resolved for this name, however. So this name may not exist in the off-chain gateway, either.
+              </>
+            )}          
+            <br/><br/>
+            More information here: <a href="https://eips.ethereum.org/EIPS/eip-3668">CCIP Read: Secure offchain data retrieval</a>
+          </>
+        })
       }
     }
 
     if (nameData.manager && (!nameData.ethAddress || nameData.ethAddress === ethers.constants.AddressZero)) {
-      ethAddressTagInfo.tag = 'No ETH Address Set'
-      ethAddressTagInfo.tagColor = 'yellowSecondary'
-      ethAddressTagInfo.tagTooltip = 'This name does not currently point to any ETH address.'
-      ethAddressTagInfo.tagTooltipDialog = <>
-        This means that nobody can send funds/tokens to this ENS name currently.
-        <br/><br/>
-        If you are trying to set the name as your <a href="https://support.ens.domains/core/records/primary-name">Primary Name</a> and it doesn&apos;t show up in the list, this is why.   
-        <br/><br/>
-        {noResolverSet ? 
-          <>First set the Resolver to the default Public Resolver. Then update the ETH address record to the address you want this ENS name to point to.</> :
-          <>Update the ETH address record to the address you want this ENS name to point to.</>
-        }
-        <br/><br/>
-        More information here: <a href="https://support.ens.domains/howto/add-wallet-address">Add a Wallet Address</a>
-      </>
+      ethAddressTags.push({
+        value: 'No ETH Address Set',
+        color: 'yellowSecondary',
+        tooltip: 'This name does not currently point to any ETH address.',
+        tooltipDialog: <>
+          This means that nobody can send funds/tokens to this ENS name currently.
+          <br/><br/>
+          If you are trying to set the name as your <a href="https://support.ens.domains/core/records/primary-name">Primary Name</a> and it doesn&apos;t show up in the list, this is why.   
+          <br/><br/>
+          {noResolverSet ? 
+            <>First set the Resolver to the default Public Resolver. Then update the ETH address record to the address you want this ENS name to point to.</> :
+            <>Update the ETH address record to the address you want this ENS name to point to.</>
+          }
+          <br/><br/>
+          More information here: <a href="https://support.ens.domains/howto/add-wallet-address">Add a Wallet Address</a>
+        </>
+      })
     }
 
     if (nameData.expiry && nameData.expiry > 0) {
@@ -345,11 +360,11 @@ export default function CheckGeneral({
       if (nowMs >= epochMs) {
         const graceEnd = epochMs + days90Ms
 
-        expiryTagInfo.tag = 'Expired'
-        expiryTagInfo.tagColor = 'redSecondary'
-        expiryTagInfo.tagTooltip = 'This name is expired.'
-        if (isETH2LD) {
-          expiryTagInfo.tagTooltipDialog = <>
+        expiryTags.push({
+          value: 'Expired',
+          color: 'redSecondary',
+          tooltip: 'This name is expired.',
+          tooltipDialog: isETH2LD ? <>
             {nowMs >= graceEnd ? <>
               The grace period for this name ended on {parseExpiry(graceEnd / 1000)}.
               <br/><br/>
@@ -361,29 +376,27 @@ export default function CheckGeneral({
             </>}
             <br/><br/>
             More information here: <a href="https://support.ens.domains/core/registration/renewals">Renewals</a>
-          </>
-        } else {
-          expiryTagInfo.tagTooltipDialog = <>
+          </> : <>
             It expired on {expiryStr}.
             <br/><br/>
             The parent owner can now recreate/replace this name.
             <br/><br/>
             If the parent name has a subname registrar active, then you may be able to re-register this name there.
           </>
-        }
+        })
       } else if (nowMs + days90Ms >= epochMs) {
-        expiryTagInfo.tag = 'Expiring Soon'
-        expiryTagInfo.tagColor = 'yellowSecondary'
-        expiryTagInfo.tagTooltip = 'This name is expiring soon.'
-        if (isETH2LD) {
-          expiryTagInfo.tagTooltipDialog = <>
+        expiryTags.push({
+          value: 'Expiring Soon',
+          color: 'yellowSecondary',
+          tooltip: 'This name is expiring soon.',
+          tooltipDialog: isETH2LD ? <>
             It will expire on {expiryStr}.
             <br/><br/>
             If it is not renewed, then you will lose ownership of the name.
             <br/><br/>
             More information here: <a href="https://support.ens.domains/core/registration/renewals">Renewals</a>
-          </>
-        }
+          </> : ''
+        })
       }
     }
   }
@@ -400,11 +413,11 @@ export default function CheckGeneral({
       ) : (
         <table className={styles.itemTable}>
           <tbody>
-            {nameData.owner ? <RecordItemRow loading={showLoading} label="Owner" value={nameData.owner} secondaryValue={nameData.ownerPrimaryName} shortValue={shortAddr(nameData.owner)} tooltipValue={nameData.owner} {...ownerTagInfo}/> : <></>}
-            <RecordItemRow loading={showLoading} label="Manager" value={nameData.manager} secondaryValue={nameData.managerPrimaryName} shortValue={shortAddr(nameData.manager)} tooltipValue={nameData.manager} {...managerTagInfo}/>
-            {expiryStr ? <RecordItemRow loading={showLoading} label="Expiry" value={expiryStr} {...expiryTagInfo}/> : <></>}
-            <RecordItemRow loading={showLoading} label="Resolver" value={nameData.resolver} secondaryValue={nameData.resolverPrimaryName} shortValue={shortAddr(nameData.resolver)} tooltipValue={nameData.resolver} {...resolverTagInfo} {...resolverTagInfo2}/>
-            <RecordItemRow loading={showLoading} label="ETH" icon={<EthSVG/>} value={nameData.ethAddress} secondaryValue={nameData.ethAddressPrimaryName} shortValue={shortAddr(nameData.ethAddress)} tooltipValue={nameData.ethAddress} {...ethAddressTagInfo}/>
+            {nameData.owner ? <RecordItemRow loading={showLoading} label="Owner" value={nameData.owner} secondaryValue={nameData.ownerPrimaryName} shortValue={shortAddr(nameData.owner)} tooltipValue={nameData.owner} tags={ownerTags}/> : <></>}
+            <RecordItemRow loading={showLoading} label="Manager" value={nameData.manager} secondaryValue={nameData.managerPrimaryName} shortValue={shortAddr(nameData.manager)} tooltipValue={nameData.manager} tags={managerTags}/>
+            {expiryStr ? <RecordItemRow loading={showLoading} label="Expiry" value={expiryStr} tags={expiryTags}/> : <></>}
+            <RecordItemRow loading={showLoading} label="Resolver" value={nameData.resolver} secondaryValue={nameData.resolverPrimaryName} shortValue={shortAddr(nameData.resolver)} tooltipValue={nameData.resolver} tags={resolverTags}/>
+            <RecordItemRow loading={showLoading} label="ETH" icon={<EthSVG/>} value={nameData.ethAddress} secondaryValue={nameData.ethAddressPrimaryName} shortValue={shortAddr(nameData.ethAddress)} tooltipValue={nameData.ethAddress} tags={ethAddressTags}/>
           </tbody>
         </table>
       )}
