@@ -47,7 +47,11 @@ export default function ConnectButtonWrapper() {
 
   useEffect(() => {
     getAccountData(address)
-  }, [address, chain, getAccountData])
+    return () => {
+      setPrimaryName('')
+      setAvatar('')
+    }
+  }, [address, chain, getAccountData, setPrimaryName, setAvatar])
 
   return (
     <ConnectButton.Custom>

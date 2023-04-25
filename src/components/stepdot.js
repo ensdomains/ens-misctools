@@ -19,7 +19,7 @@ export default function StepDot({
         }}
       >
         {spinner ? (
-          <Spinner color="accent" />
+          <Spinner color="accent" size="medium"/>
         ) : success ? (
           <svg
             width="24"

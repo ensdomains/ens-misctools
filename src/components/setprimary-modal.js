@@ -33,11 +33,15 @@ export default function SetPrimaryModal({
 
   const hasResolver = isValidAddress(reverseRecordResolver) || isResolverSet
 
+  const nameIsEmpty = name === ''
+
   const {
     isNameValid,
     normalizedName,
     bestDisplayName
   } = normalize(name)
+
+  const nameToSet = nameIsEmpty ? '0x0000000000000000000000000000000000000000' : normalizedName
 
   const reverseNode = addr ? namehash(addr.toLowerCase().substring(2) + '.addr.reverse') : ''
 
@@ -49,9 +53,9 @@ export default function SetPrimaryModal({
       addr,
       owner,
       resolver,
-      normalizedName
+      nameToSet
     ] : [
-      normalizedName
+      nameToSet
     ],
     overrides: {
       gasLimit: '150000',
@@ -69,7 +73,7 @@ export default function SetPrimaryModal({
       if (didFail) {
         toast.error('Set primary name failed')
       } else {
-        toast.success('Your primary name has been set!')
+        toast.success(`Your primary name has been ${nameIsEmpty ? 'cleared' : 'set'}!`)
         setIsPrimaryNameSet(true)
       }
     },
@@ -106,13 +110,12 @@ export default function SetPrimaryModal({
 
   // Contract write: resolver.setName
   const resolverSetName = useContractWrite({
-    address: reverseRecordResolver,
+    address: isValidAddress(reverseRecordResolver) ? reverseRecordResolver : resolver,
     abi: ['function setName(bytes32 node, string calldata newName) external'],
-    // abi: '[{"inputs":[{"internalType":"bytes32","name":"node","type":"bytes32"},{"internalType":"string","name":"newName","type":"string"}],"name":"setName","outputs":[],"stateMutability":"nonpayable","type":"function"}]',
     functionName: 'setName',
     args: [
       reverseNode,
-      normalizedName
+      nameToSet
     ],
     overrides: {
       gasLimit: '150000',
@@ -141,7 +144,7 @@ export default function SetPrimaryModal({
       if (didFail) {
         toast.error('Set primary name failed')
       } else {
-        toast.success('Your primary name has been set!')
+        toast.success(`Your primary name has been ${nameIsEmpty ? 'cleared' : 'set'}!`)
         setIsPrimaryNameSet(true)
       }
     },
@@ -150,18 +153,29 @@ export default function SetPrimaryModal({
   const setNameTx = useReverseRegistrar ? setName : resolverSetName
   const waitForSetNameTx = useReverseRegistrar ? waitForSetName : waitForResolverSetName
 
+  const dismiss = () => {
+    setIsResolverSet(false)
+    setIsPrimaryNameSet(false)
+    setName.reset()
+    setResolver.reset()
+    resolverSetName.reset()
+    setIsOpen(false)
+  }
+
   return (
     <>
       <Dialog
-        open={open && isNameValid}
+        open={open && (nameIsEmpty || isNameValid)}
         className="modal"
         title={<>
           <Heading as="h2" align="center">
-            {isPrimaryNameSet ? 'Primary Name Set!' : 'Set Primary Name'}
+            {isPrimaryNameSet ? `Primary Name ${nameIsEmpty ? 'Cleared' : 'Set'}!` : `${nameIsEmpty ? 'Clear' : 'Set'} Primary Name`}
           </Heading>
           {!isPrimaryNameSet && 
             <>
-              <Typography>To: {bestDisplayName}</Typography>
+              {!nameIsEmpty &&
+                <Typography>To: {bestDisplayName}</Typography>
+              }
               {isForAddrMode &&
                 <Typography>For: {addr}</Typography>
               }
@@ -175,7 +189,7 @@ export default function SetPrimaryModal({
               <Button
                 shadowless
                 variant="secondary"
-                onClick={() => setIsOpen(false)}
+                onClick={dismiss}
               >
                 Cancel
               </Button>
@@ -187,17 +201,17 @@ export default function SetPrimaryModal({
             // Link to ENS manager
             <Button
               as="a"
-              href={`https://app.ens.domains/name/${bestDisplayName}/details`}
+              href={`https://app.ens.domains/${addr}`}
               target="_blank"
               rel="noreferrer"
             >
               Open ENS Manager
             </Button>
-          ) : setNameTx.data?.hash ? (
+          ) : (setNameTx.data?.hash || (!hasResolver && setResolver.data?.hash)) ? (
             // Link to Etherscan
             <Button
               as="a"
-              href={`https://${chain?.id === goerli.id ? 'goerli.' : ''}etherscan.io/tx/${setNameTx.data.hash}`}
+              href={`https://${chain?.id === goerli.id ? 'goerli.' : ''}etherscan.io/tx/${setNameTx.data?.hash || setResolver.data.hash}`}
               target="_blank"
               rel="noreferrer"
             >
@@ -215,15 +229,19 @@ export default function SetPrimaryModal({
             // Refresh the page on dialog exit to fully reset state
             window.location.reload()
           } else {
-            setIsOpen(false)
+            dismiss()
           }
         }}
       >
-        <div>
-          <Typography size="base" style={{ marginBottom: '1.5rem' }}>
+        <div style={{width:'100%'}}>
+          <Typography size="base" style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
             {isPrimaryNameSet && (
               <p>
-                You successfully set the primary name to <strong>{bestDisplayName}</strong>!
+                {nameIsEmpty ? <>
+                  You successfully cleared the primary name!
+                </> : <>
+                  You successfully set the primary name to <strong>{bestDisplayName}</strong>!
+                </>}
               </p>
             )}
           </Typography>
@@ -239,7 +257,7 @@ export default function SetPrimaryModal({
                 />
               }
               <StepDot
-                label="Set Primary Name"
+                label={`${nameIsEmpty ? 'Clear' : 'Set'} Primary Name`}
                 loading={(useReverseRegistrar || hasResolver) && !setNameTx.data}
                 spinner={waitForSetNameTx.isLoading}
                 success={waitForSetNameTx.data?.status === 1}

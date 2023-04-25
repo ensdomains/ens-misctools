@@ -7,7 +7,8 @@ import {
   Input,
   RadioButton,
   Tooltip,
-  Typography
+  Typography,
+  Dialog
 } from '@ensdomains/thorin'
 import { useAccount, useProvider } from 'wagmi'
 import { ethers } from 'ethers'
@@ -22,6 +23,8 @@ import {
   parseName,
   namehash,
   universalResolveAddr,
+  universalResolvePrimaryName,
+  getUniversalResolverPrimaryName,
   convertToAddress,
   getAddress,
   isValidAddress
@@ -35,11 +38,15 @@ export default function SetPrimary() {
   const [defaultReverseResolver, setDefaultReverseResolver] = useState('')
   const [useReverseRegistrar, setUseReverseRegistrar] = useState(true)
   const [reverseRecordResolver, setReverseRecordResolver] = useState('')
+  const [primarySameDialogOpen, setPrimarySameDialogOpen] = useState(false)
+  const [emptyNameDialogOpen, setEmptyNameDialogOpen] = useState(false)
   const [isForAddrMode, setForAddrMode] = useState(false)
 
   const provider = useProvider()
   const { address } = useAccount()
   const { chain, chains } = useChain(provider)
+
+  const nameIsEmpty = name === ''
 
   return (
     <>
@@ -72,10 +79,7 @@ export default function SetPrimary() {
             let defaultReverseResolver = ''
             let useReverseRegistrar = true
             let reverseRecordResolver = ''
-
-            if (!name) {
-              return toast.error('Please enter an ENS name')
-            }
+            let isPrimaryNameAlreadyTheSame = false
 
             // Normalize name
             const {
@@ -85,11 +89,11 @@ export default function SetPrimary() {
 
             if (isNameValid) {
               setName(normalizedName)
-            } else {
+            } else if (!nameIsEmpty) {
               return toast.error(`${name} is not a valid name`)
             }
 
-            // Calculate parentNode, labelhash, id
+            // Calculate node
             const {
               node
             } = parseName(normalizedName)
@@ -113,9 +117,15 @@ export default function SetPrimary() {
             const multi = MulticallWrapper.wrap(provider)
             const batch1 = []
 
-            // Resolve ETH address
             const universalResolver = new ethers.Contract(ensConfig[chain].UniversalResolver?.address, ensConfig[chain].UniversalResolver?.abi, multi)
-            batch1.push(universalResolveAddr(universalResolver, normalizedName, node))
+
+            if (!nameIsEmpty) {
+              // Resolve ETH address              
+              batch1.push(universalResolveAddr(universalResolver, normalizedName, node))
+            }
+
+            // Resolve current Primary Name
+            batch1.push(universalResolvePrimaryName(universalResolver, isForAddrMode ? contractAddress : address))
 
             let contractIsOwnable = false
             if (isForAddrMode) {
@@ -148,18 +158,32 @@ export default function SetPrimary() {
             const results1 = await Promise.all(batch1)
             let results1Index = 0
 
-            let ethAddress = ''
-            if (results1[results1Index] && !(results1[results1Index] instanceof Error) && results1[results1Index].length >= 1) {
-              ethAddress = convertToAddress(results1[results1Index][0])
+            if (!nameIsEmpty) {
+              let ethAddress = ''
+              if (results1[results1Index] && !(results1[results1Index] instanceof Error) && results1[results1Index].length >= 1) {
+                ethAddress = convertToAddress(results1[results1Index][0])
+              }
+              results1Index++
+
+              if (!isValidAddress(ethAddress)) {
+                return toast.error('Name does not resolve to an ETH address')
+              } else if (!isForAddrMode && getAddress(address) !== ethAddress) {
+                return toast.error('Name does not resolve to your address')
+              } else if (isForAddrMode && getAddress(contractAddress) !== ethAddress) {
+                return toast.error('Name does not resolve to the entered address')
+              }
             }
+
+            const currentPrimaryName = getUniversalResolverPrimaryName(isForAddrMode ? contractAddress : address, results1[results1Index])
             results1Index++
 
-            if (!isValidAddress(ethAddress)) {
-              return toast.error('Name does not resolve to an ETH address')
-            } else if (!isForAddrMode && getAddress(address) !== ethAddress) {
-              return toast.error('Name does not resolve to your address')
-            } else if (isForAddrMode && getAddress(contractAddress) !== ethAddress) {
-              return toast.error('Name does not resolve to the entered address')
+            const {
+              isNameValid : isNameValid2,
+              normalizedName: normalizedName2
+            } = normalize(currentPrimaryName)
+
+            if ((isNameValid && isNameValid2 && normalizedName2 === normalizedName) || (nameIsEmpty && (currentPrimaryName === '' || currentPrimaryName === ethers.constants.AddressZero))) {
+              isPrimaryNameAlreadyTheSame = true
             }
 
             if (isForAddrMode) {
@@ -212,21 +236,34 @@ export default function SetPrimary() {
             setDefaultReverseResolver(defaultReverseResolver)
             setUseReverseRegistrar(useReverseRegistrar)
             setReverseRecordResolver(reverseRecordResolver)
-            setDialogOpen(true)
+
+            if (isPrimaryNameAlreadyTheSame) {
+              setPrimarySameDialogOpen(true)
+            } else if (nameIsEmpty) {
+              setEmptyNameDialogOpen(true)
+            } else {
+              setDialogOpen(true)
+            }
           }}
         >
           <div className={styles.radiorow}>
             <Tooltip content={<Typography>Set the ENS Primary Name for your currently connected address.</Typography>}>
-              <RadioButton label="For Your Address" name="foraddrmode" value="false" checked={!isForAddrMode} onChange={() => setForAddrMode(false)}/>
+              <RadioButton label="For Your Address" name="foraddrmode" value="false" checked={!isForAddrMode} onChange={() => {
+                setForAddrMode(false)
+                setContractAddress('')
+              }}/>
             </Tooltip>
             <Tooltip width={400} content={
                 <Typography>
                   Set the ENS Primary Name for a separate address.
                   <br/><br/>
-                  This should be either a contract account that you own (via Ownable), or an account that you are approved as an operator for in the ENS Registry.
+                  This must be either a contract account that you own (via Ownable), or an account that you are approved as an operator for in the ENS Registry.
                 </Typography>
               }>
-              <RadioButton label="For Another Address" name="foraddrmode" value="true" checked={isForAddrMode} onChange={() => setForAddrMode(true)}/>
+              <RadioButton label="For Another Address" name="foraddrmode" value="true" checked={isForAddrMode} onChange={() => {
+                setForAddrMode(true)
+                setContractAddress('')
+              }}/>
             </Tooltip>
           </div>
           <div className={styles.col}>
@@ -261,6 +298,48 @@ export default function SetPrimary() {
           >
             Set Primary Name
           </Button>
+          <Dialog
+            open={primarySameDialogOpen}
+            className="modal"
+            variant="actionable"
+            title={`Primary Name Already ${nameIsEmpty ? 'Cleared' : 'Set'}`}
+            leading={<Button shadowless variant="secondary" onClick={() => setPrimarySameDialogOpen(false)}>Cancel</Button>}
+            trailing={<Button shadowless onClick={() => {
+              setPrimarySameDialogOpen(false)
+              setDialogOpen(true)
+            }}>Continue</Button>}
+            onDismiss={() => setPrimarySameDialogOpen(false)}
+          >
+            <Typography>
+              {nameIsEmpty && <>
+                You did not enter any name.
+                <br/><br/>
+              </>}
+              The primary name for {isForAddrMode ? contractAddress : address} is already {nameIsEmpty ? <>unset</> : <>set to &quot;{normalize(name).bestDisplayName}&quot;</>}.
+              <br/><br/>
+              Do you want to continue and {nameIsEmpty ? <>clear the</> : <>set it to the same</>} primary name again?
+              <br/><br/>
+              This may be useful if you don&apos;t currently own the reverse node in the registry, and you want to reclaim it.
+            </Typography>
+          </Dialog>
+          <Dialog
+            open={emptyNameDialogOpen}
+            className="modal"
+            variant="actionable"
+            title="Clear Primary Name?"
+            leading={<Button shadowless variant="secondary" onClick={() => setEmptyNameDialogOpen(false)}>Cancel</Button>}
+            trailing={<Button shadowless onClick={() => {
+              setEmptyNameDialogOpen(false)
+              setDialogOpen(true)
+            }}>Continue</Button>}
+            onDismiss={() => setEmptyNameDialogOpen(false)}
+          >
+            <Typography>
+              You did not enter any name.
+              <br/><br/>
+              Do you really want to clear the Primary Name for {isForAddrMode ? contractAddress : address}?
+            </Typography>
+          </Dialog>
           <SetPrimaryModal
             isForAddrMode={isForAddrMode}
             addr={isForAddrMode ? contractAddress : address}
@@ -270,7 +349,14 @@ export default function SetPrimary() {
             useReverseRegistrar={useReverseRegistrar}
             reverseRecordResolver={reverseRecordResolver}
             open={dialogOpen}
-            setIsOpen={setDialogOpen}
+            setIsOpen={(isOpen) => {
+              setDialogOpen(isOpen)
+              if (!isOpen) {
+                setDefaultReverseResolver('')
+                setUseReverseRegistrar(true)
+                setReverseRecordResolver('')
+              }
+            }}
           />
         </form>
       </div>
