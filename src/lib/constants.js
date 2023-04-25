@@ -3,6 +3,7 @@ import { mainnet, goerli } from '@wagmi/core/chains'
 const registryABI = require('./ens-registry-abi.json')
 const ethRegistrarABI = require('./ens-eth-registrar-abi.json')
 const nameWrapperABI = require('./ens-namewrapper-abi.json')
+const reverseRegistrarABI = require('./ens-reverse-registrar-abi.json')
 const latestPublicResolverABI = require('./ens-latest-public-resolver.json')
 const universalResolverABI = require('./ens-universal-resolver.json')
 
@@ -19,6 +20,10 @@ export const ensConfig = {
     NameWrapper: {
       address: '0xD4416b13d2b3a9aBae7AcD5D6C2BbDBE25686401',
       abi: nameWrapperABI,
+    },
+    ReverseRegistrar: {
+      address: '0xa58E81fe9b61B5c3fE2AFD33CF304c454AbFc7Cb',
+      abi: reverseRegistrarABI,
     },
     publicResolvers: [
       '0x231b0Ee14048e9dCcD1d247744d114a4EB5E8E63',
@@ -47,12 +52,17 @@ export const ensConfig = {
       address: '0x114D4603199df73e7D157787f8778E21fCd13066',
       abi: nameWrapperABI,
     },
+    ReverseRegistrar: {
+      address: '0x4f7A657451358a22dc397d5eE7981FfC526cd856',
+      abi: reverseRegistrarABI,
+    },
     publicResolvers: [
       '0xd7a4F6473f32aC2Af804B3686AE8F1932bC35750',
       '0x342cf18D3e41DE491aa1a3067574C849AdA6a2Ad',
       '0x19c2d5D0f035563344dBB7bE5fD09c8dad62b001',
       '0x2800Ec5BAB9CE9226d19E0ad5BC607e3cfC4347E',
-      '0xE264d5bb84bA3b8061ADC38D3D76e6674aB91852'
+      '0xE264d5bb84bA3b8061ADC38D3D76e6674aB91852',
+      '0x4B1488B7a6B320d2D721406204aBc3eeAa9AD329'
     ],
     LatestPublicResolver: {
       address: '0xd7a4F6473f32aC2Af804B3686AE8F1932bC35750',

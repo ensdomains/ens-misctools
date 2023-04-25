@@ -53,7 +53,6 @@ function TagWithTooltip({
       mobilePlacement="top"
       mobileWidth={250}
       placement="top"
-      targetId="buttonIdTop"
       width={400}
       hideOverflow={true}
     >

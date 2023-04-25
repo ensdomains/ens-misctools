@@ -41,15 +41,6 @@ export function encodeMethodData(method, data, format) {
   return format === 'hex' ? result.toString('hex') : result
 }
 
-export function convertToAddress(bytes32) {
-  try {
-    return getAddress(ethers.utils.defaultAbiCoder.decode(['address'], bytes32)[0])
-  } catch (e) {
-    console.error(e)
-    return ''
-  }
-}
-
 export function universalResolveAddr(universalResolver, name, node) {
   if (!node) {
     node = parseName(name).node
@@ -72,6 +63,15 @@ export function getUniversalResolverPrimaryName(address, result) {
   return ''
 }
 
+export function convertToAddress(bytes32) {
+  try {
+    return getAddress(ethers.utils.defaultAbiCoder.decode(['address'], bytes32)[0])
+  } catch (e) {
+    console.error(e)
+    return ''
+  }
+}
+
 export function getAddress(address) {
   if (address) {
     try {
@@ -81,6 +81,10 @@ export function getAddress(address) {
     }
   }
   return address
+}
+
+export function isValidAddress(address) {
+  return ethers.utils.isAddress(address) && address != ethers.constants.AddressZero
 }
 
 export function normalize(name) {
