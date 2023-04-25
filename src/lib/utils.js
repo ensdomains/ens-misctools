@@ -119,10 +119,12 @@ export function normalize(name) {
 
 export function parseName(name) {
   let node = ''
+  let nodeDecimal = ''
   let parentName = ''
   let parentNode = ''
   let label = ''
   let labelhash = ''
+  let labelhashDecimal = ''
   let level = 0
   let isETH = false
   let isETH2LD = false
@@ -132,6 +134,7 @@ export function parseName(name) {
   try {
     if (typeof name === 'string') {
       node = namehash(name)
+      nodeDecimal = bigInt(node.substring(2), 16).toString()
 
       const labels = name.split('.')
       level = labels.length
@@ -139,6 +142,7 @@ export function parseName(name) {
       if (level > 0) {
         label = labels[0]
         labelhash = '0x' + keccak_256(label)
+        labelhashDecimal = bigInt(labelhash.substring(2), 16).toString()
         parentName = labels.slice(1).join('.')
         parentNode = namehash(parentName)
 
@@ -146,20 +150,22 @@ export function parseName(name) {
           isETH = true
           if (level === 2) {
             isETH2LD = true
-            eth2LDTokenId = bigInt(labelhash.substring(2), 16).toString()
+            eth2LDTokenId = labelhashDecimal
           }
         }
-        wrappedTokenId = bigInt(node.substring(2), 16).toString()
+        wrappedTokenId = nodeDecimal
       }
     }
   } catch (e) {}
 
   return {
     node,
+    nodeDecimal,
     parentName,
     parentNode,
     label,
     labelhash,
+    labelhashDecimal,
     level,
     isETH,
     isETH2LD,
@@ -172,8 +178,19 @@ export function containsIgnoreCase(text, value) {
   return text && value && text.toLowerCase().indexOf(value.toLowerCase()) >= 0
 }
 
-export function shortAddr(address) {
-  if (address && address.length >= 10) {
+export function abbreviatedValue(value) {
+  if (value) {
+    if (value.indexOf('0x') === 0) {
+      value = abbreviatedAddr(value)
+    } else if (value.length > 8) {
+      value = value.substring(0, 4) + '...' + value.substring(value.length - 4)
+    }
+  }
+  return value
+}
+
+export function abbreviatedAddr(address) {
+  if (address && address.length > 10) {
     address = address.substring(0, 6) + '...' + address.substring(address.length - 4)
   }
   return address

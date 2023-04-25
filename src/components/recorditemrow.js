@@ -58,7 +58,7 @@ function TagWithTooltip({
       hideOverflow={true}
     >
       <div>
-        <Tag className={tooltipDialogValue ? styles.recorditemtagtooltip : styles.recorditemtag} onClick={tooltipDialogValue && (() => setTagDialogOpen(true))} {...tagProps}>{tagIcon}{tagValue}</Tag>
+        <Tag className={tooltipDialogValue ? styles.recorditemtagtooltip : styles.recorditemtag} onClick={tooltipDialogValue ? (() => setTagDialogOpen(true)) : () => {}} {...tagProps}>{tagIcon}{tagValue}</Tag>
         { tooltipDialogValue && (
           <Dialog
             open={tagDialogOpen}
@@ -89,8 +89,11 @@ export default function RecordItemRow({
   shortValue,
   tooltipValue,
   secondaryLabel,
+  secondarySubLabel,
   secondaryValue,
+  secondaryShortValue,
   secondaryIcon,
+  secondaryInline,
   tags
 }) {
   const getIcon = (icon, color) => {
@@ -118,12 +121,13 @@ export default function RecordItemRow({
               <Skeleton loading={loading}>
                 <RecordItem
                   keyLabel={secondaryLabel}
-                  icon={secondaryIcon || <EnsSVG/>}
+                  keySublabel={secondarySubLabel}
+                  icon={secondaryIcon === false ? null : <EnsSVG/>}
                   onClick={async () => {await copyToClipBoard(secondaryValue)}}
                   size="small"
-                  inline
+                  {...(secondaryInline === false ? {} : {inline:true})}
                 >
-                  {secondaryValue}
+                  {secondaryShortValue || secondaryValue}
                 </RecordItem>
               </Skeleton>
             </div>
@@ -134,7 +138,7 @@ export default function RecordItemRow({
                 <TagWithTooltip
                   key={tag.value}
                   tagValue={tag.value}
-                  tagIcon={getIcon(tag.icon)}
+                  tagIcon={getIcon(tag.icon, tag.color)}
                   tooltipValue={tag.tooltip}
                   tooltipDialogValue={tag.tooltipDialog}
                   colorStyle={tag.color}

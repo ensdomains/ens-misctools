@@ -79,3 +79,14 @@
 .itemTable svg {
   margin-right: 0.2rem;
 }
+
+.itemTableAlt tr td:first-child {
+  padding-right: 1rem;
+  padding-bottom: 1rem;
+  vertical-align: top;
+}
+
+.metadataSection {
+  display: flex;
+  flex-direction: row;
+}
