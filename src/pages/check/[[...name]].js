@@ -18,11 +18,11 @@ export default function Check() {
   return (
     <>
       <Head>
-        <title>ENS Misc Tools - Check Name</title>
+        <title>ENS Tools - Check Name</title>
         <link rel="icon" href="/favicon.ico" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="description" content="Quick dashboard for normalization, expiry, parent expiry, resolver, wrapped state, and subnames"/>
-        <meta property="og:title" content="ENS Misc Tools - Check Name"/>
+        <meta property="og:title" content="ENS Tools - Check Name"/>
         <meta property="og:description" content="Quick dashboard for normalization, expiry, parent expiry, resolver, wrapped state, and subnames"/>
         <meta property="og:image" content="https://tools.ens.domains/sharing-check.jpg"/>
         <meta property="twitter:card" content="summary_large_image"/>

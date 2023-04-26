@@ -20,7 +20,7 @@ const { chains, provider } = configureChains(
 )
 
 const { connectors } = getDefaultWallets({
-  appName: 'ENS Misc Tools',
+  appName: 'ENS Tools',
   chains,
 })
 

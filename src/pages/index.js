@@ -9,12 +9,12 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>ENS Misc Tools</title>
+        <title>ENS Tools</title>
         <link rel="icon" href="/favicon.ico" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="description" content="Miscellaneous tasks that aren't yet in the ENS Manager App"/>
-        <meta property="og:title" content="ENS Misc Tools"/>
-        <meta property="og:description" content="Miscellaneous tasks that aren't yet in the ENS Manager App"/>
+        <meta name="description" content="Miscellaneous ENS-related tasks"/>
+        <meta property="og:title" content="ENS Tools"/>
+        <meta property="og:description" content="Miscellaneous ENS-related tasks"/>
         <meta property="og:image" content="https://tools.ens.domains/sharing.jpg"/>
         <meta property="twitter:card" content="summary_large_image"/>
         <meta property="twitter:creator" content="@serenae_fansubs"/>

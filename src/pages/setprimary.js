@@ -51,11 +51,11 @@ export default function SetPrimary() {
   return (
     <>
       <Head>
-        <title>ENS Misc Tools - Set Primary Name</title>
+        <title>ENS Tools - Set Primary Name</title>
         <link rel="icon" href="/favicon.ico" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="description" content="Set ENS Primary Name, for contract addresses too"/>
-        <meta property="og:title" content="ENS Misc Tools - Set Primary Name"/>
+        <meta property="og:title" content="ENS Tools - Set Primary Name"/>
         <meta property="og:description" content="Set ENS Primary Name, for contract addresses too"/>
         <meta property="og:image" content="https://tools.ens.domains/sharing-setprimary.jpg"/>
         <meta property="twitter:card" content="summary_large_image"/>

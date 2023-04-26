@@ -47,7 +47,7 @@ export default function Header({ position }) {
       <Link href={topLinkDisabled ? '#' : '/'}>
         <a style={topLinkDisabled ? {cursor:'default'} : {}}>
           <Heading as="span" level="2" className="header__name">
-            ENS Misc Tools
+            ENS Tools
           </Heading>
         </a>
       </Link>

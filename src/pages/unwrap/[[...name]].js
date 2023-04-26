@@ -25,11 +25,11 @@ export default function Unwrap() {
   return (
     <>
       <Head>
-        <title>ENS Misc Tools - Unwrap Name</title>
+        <title>ENS Tools - Unwrap Name</title>
         <link rel="icon" href="/favicon.ico" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="description" content="Unwrap an ENS name from the Name Wrapper"/>
-        <meta property="og:title" content="ENS Misc Tools - Unwrap Name"/>
+        <meta property="og:title" content="ENS Tools - Unwrap Name"/>
         <meta property="og:description" content="Unwrap an ENS name from the Name Wrapper"/>
         <meta property="og:image" content="https://tools.ens.domains/sharing-unwrap.jpg"/>
         <meta property="twitter:card" content="summary_large_image"/>
