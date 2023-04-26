@@ -1,5 +1,9 @@
 # ENS Misc Tools
 
-Miscellaneous tasks that aren't yet in the ENS Manager App
+Miscellaneous tasks to address some edge-cases that may not make sense for the ENS Manager App (or are still on the roadmap)
 
-* Unwrap a name
+* [Check a name](https://tools.ens.domains/check)
+  * Quick dashboard for normalization, expiry, parent expiry, resolver, wrapped state, and subnames
+* [Set Primary Name](https://tools.ens.domains/setprimary)
+  * Works for contract addresses too
+* [Unwrap a name](https://tools.ens.domains/unwrap)
