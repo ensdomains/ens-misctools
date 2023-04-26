@@ -45,6 +45,14 @@ export default function Home() {
           </Link>
           <Typography>You have &quot;upgraded&quot; a name, or in other words wrapped the name in the ENS Name Wrapper. Use this tool to unwrap that name, if the permission to unwrap has not been revoked.</Typography>
         </Card>
+        <Card>
+          <Link href="/setprmanager">
+            <a>
+              <div><Image src="/sharing-setprmanager.png" alt="Set Public Resolver Manager" width="350" height="175" priority/></div>
+            </a>
+          </Link>
+          <Typography>If you are using the latest Public Resolver, then you can use this to approve separate manager accounts that can edit your records, but can&apos;t transfer any names.</Typography>
+        </Card>
       </div>
     </>
   )

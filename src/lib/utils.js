@@ -76,9 +76,7 @@ export function getAddress(address) {
   if (address) {
     try {
       address = ethers.utils.getAddress(address)
-    } catch (e) {
-      console.error(e)
-    }
+    } catch (e) {}
   }
   return address
 }
