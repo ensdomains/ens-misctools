@@ -5,7 +5,9 @@ import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { copyToClipBoard, normalize } from '../lib/utils'
 import { useChain } from '../hooks/misc'
 
-export default function ConnectButtonWrapper() {
+export default function ConnectButtonWrapper({
+  embedded
+}) {
   const { disconnect } = useDisconnect()
   const provider = useProvider()
   const { address } = useAccount()
@@ -67,7 +69,7 @@ export default function ConnectButtonWrapper() {
             address={account.address}
             ensName={primaryName}
             avatar={avatar}
-            size="large"
+            size={embedded ? 'medium' : 'large'}
             dropdownItems={[
               {
                 label: `Balance: ${account.displayBalance}`,
