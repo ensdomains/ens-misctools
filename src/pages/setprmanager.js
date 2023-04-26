@@ -292,7 +292,6 @@ export default function SetPublicResolverManager() {
               name="tmanager"
               label="Manager Address or ENS Name"
               placeholder="0x..."
-              maxLength="255"
               spellCheck="false"
               autoCapitalize="none"
               parentStyles={{ backgroundColor: '#fff' }}

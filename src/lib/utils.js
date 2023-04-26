@@ -50,6 +50,18 @@ export function universalResolveAddr(universalResolver, name, node) {
   }).catch(e => e)
 }
 
+export function universalResolveAvatar(universalResolver, name, node) {
+  if (!node) {
+    node = parseName(name).node
+  }
+
+  const data = ethers.utils.defaultAbiCoder.encode(['bytes32', 'string'], [node, 'avatar'])
+
+  return universalResolver['resolve(bytes,bytes)'](dnsEncode(name), encodeMethodData('text(bytes32,string)', data), {
+    ccipReadEnabled: true
+  }).catch(e => e)
+}
+
 export function universalResolvePrimaryName(universalResolver, address) {
   return universalResolver['reverse(bytes)'](dnsEncode(address.toLowerCase().substring(2) + '.addr.reverse'), {
     ccipReadEnabled: true

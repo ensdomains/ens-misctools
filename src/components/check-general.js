@@ -1,5 +1,5 @@
 import styles from '../styles/Check.module.css'
-import { EthSVG, Heading, Typography } from '@ensdomains/thorin'
+import { EthSVG, Heading, Typography, RecordItem, Skeleton } from '@ensdomains/thorin'
 import RecordItemRow from './recorditemrow'
 import { ensConfig } from '../lib/constants'
 import {
@@ -7,12 +7,14 @@ import {
   normalize,
   parseName,
   universalResolveAddr,
+  universalResolveAvatar,
   universalResolvePrimaryName,
   getUniversalResolverPrimaryName,
   convertToAddress,
   getAddress,
   abbreviatedValue,
-  parseExpiry
+  parseExpiry,
+  copyToClipBoard
 } from '../lib/utils'
 import useCache from '../hooks/cache'
 import { useChain } from '../hooks/misc'
@@ -63,6 +65,7 @@ export default function CheckGeneral({
 
           const universalResolver = new ethers.Contract(ensConfig[chain].UniversalResolver?.address, ensConfig[chain].UniversalResolver?.abi, multi)
           batch1.push(universalResolveAddr(universalResolver, normalizedName, node))
+          batch1.push(universalResolveAvatar(universalResolver, normalizedName, node))
 
           if (isETH2LD) {
             // Get registrar owner
@@ -98,6 +101,15 @@ export default function CheckGeneral({
           if (results1[results1Index] && !(results1[results1Index] instanceof Error) && results1[results1Index].length > 1) {
             nameData.ethAddress = convertToAddress(results1[results1Index][0])
             nameData.resolver = getAddress(results1[results1Index][1])
+          }
+          results1Index++
+
+          // Get avatar (possibly via wildcard or offchain)
+          if (results1[results1Index] && !(results1[results1Index] instanceof Error) && results1[results1Index].length > 0) {
+            try {
+              nameData.avatar = ethers.utils.defaultAbiCoder.decode(['string'], results1[results1Index][0])[0]
+              nameData.avatarUrl = `https://metadata.ens.domains/${chain === goerli.id ? 'goerli' : 'mainnet'}/avatar/${normalizedName}`
+            } catch (e) {}
           }
           results1Index++
 
@@ -497,6 +509,20 @@ export default function CheckGeneral({
             {expiryStr ? <RecordItemRow loading={showLoading} label="Expiry" value={expiryStr} tags={expiryTags}/> : <></>}
             <RecordItemRow loading={showLoading} label="Resolver" value={nameData.resolver} secondaryValue={nameData.resolverPrimaryName} shortValue={abbreviatedValue(nameData.resolver)} tooltipValue={nameData.resolver} tags={resolverTags}/>
             <RecordItemRow loading={showLoading} label="ETH" icon={<EthSVG/>} value={nameData.ethAddress} secondaryValue={nameData.ethAddressPrimaryName} shortValue={abbreviatedValue(nameData.ethAddress)} tooltipValue={nameData.ethAddress} tags={ethAddressTags}/>
+            {nameData.avatar ? 
+              <tr>
+                <td>
+                  <Skeleton loading={showLoading}>
+                    <div>
+                      <RecordItem keyLabel="Avatar" onClick={async () => {await copyToClipBoard(nameData.avatar)}}>{nameData.avatar.length > 20 ? nameData.avatar.substring(0, 20) + '...' : nameData.avatar}</RecordItem>
+                    </div>
+                  </Skeleton>
+                </td>
+                <td>
+                  {nameData.avatarUrl && <Image src={nameData.avatarUrl} alt="Avatar" width="42" height="42"/>}
+                </td>
+              </tr>
+            : <></>}
           </tbody>
         </table>
       )}
