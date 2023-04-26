@@ -30,7 +30,7 @@ const wagmiClient = createClient({
   provider,
 })
 
-// const isProdEnv = process.env.NEXT_PUBLIC_VERCEL_ENV == 'production'
+const isProdEnv = process.env.NEXT_PUBLIC_VERCEL_ENV === 'production'
 
 function App({ Component, pageProps }) {
   return (
@@ -38,7 +38,13 @@ function App({ Component, pageProps }) {
       <ThorinGlobalStyles />
       <WagmiConfig client={wagmiClient}>
         <RainbowKitProvider chains={chains}>
-          <Component {...pageProps} />
+          <PlausibleProvider
+            domain={isProdEnv ? 'tools.ens.domains' : 'ens-misctools.vercel.app'}
+            trackLocalhost={!isProdEnv}
+            trackOutboundLinks
+          >
+            <Component {...pageProps} />
+          </PlausibleProvider>
         </RainbowKitProvider>
       </WagmiConfig>
     </ThemeProvider>

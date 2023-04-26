@@ -15,6 +15,7 @@ import {
 } from 'wagmi'
 import { goerli } from '@wagmi/core/chains'
 import { normalize, namehash, isValidAddress } from '../lib/utils'
+import { usePlausible } from 'next-plausible'
 
 export default function SetPrimaryModal({
   isForAddrMode,
@@ -27,6 +28,7 @@ export default function SetPrimaryModal({
   open,
   setIsOpen,
 }) {
+  const plausible = usePlausible()
   const { chain } = useNetwork()
   const [isResolverSet, setIsResolverSet] = useState(false)
   const [isPrimaryNameSet, setIsPrimaryNameSet] = useState(false)
@@ -75,6 +77,16 @@ export default function SetPrimaryModal({
       } else {
         toast.success(`Your primary name has been ${nameIsEmpty ? 'cleared' : 'set'}!`)
         setIsPrimaryNameSet(true)
+
+        plausible('Set Primary Name', {
+          props: {
+            node: reverseNode,
+            name: normalizedName,
+            forAddr: isForAddrMode,
+            usingRR: true,
+            network: chain.name
+          }
+        })
       }
     },
   })
@@ -104,6 +116,14 @@ export default function SetPrimaryModal({
         toast.error('Set resolver failed')
       } else {
         setIsResolverSet(true)
+
+        plausible('Set Reverse Resolver', {
+          props: {
+            node: reverseNode,
+            resolver: resolver,
+            network: chain.name
+          }
+        })
       }
     },
   })
@@ -146,6 +166,16 @@ export default function SetPrimaryModal({
       } else {
         toast.success(`Your primary name has been ${nameIsEmpty ? 'cleared' : 'set'}!`)
         setIsPrimaryNameSet(true)
+
+        plausible('Set Primary Name', {
+          props: {
+            node: reverseNode,
+            name: normalizedName,
+            forAddr: isForAddrMode,
+            usingRR: false,
+            network: chain.name
+          }
+        })
       }
     },
   })
