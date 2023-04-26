@@ -108,8 +108,14 @@ export default function CheckGeneral({
           if (results1[results1Index] && !(results1[results1Index] instanceof Error) && results1[results1Index].length > 0) {
             try {
               nameData.avatar = ethers.utils.defaultAbiCoder.decode(['string'], results1[results1Index][0])[0]
-              nameData.avatarUrl = `https://metadata.ens.domains/${chain === goerli.id ? 'goerli' : 'mainnet'}/avatar/${normalizedName}`
-            } catch (e) {}
+              if (nameData.avatar.indexOf('http://') === 0 || nameData.avatar.indexOf('https://') === 0) {
+                nameData.avatarUrl = nameData.avatar
+              } else {
+                nameData.avatarUrl = `https://metadata.ens.domains/${chain === goerli.id ? 'goerli' : 'mainnet'}/avatar/${normalizedName}`
+              }
+            } catch (e) {
+              console.error(e)
+            }
           }
           results1Index++
 
@@ -519,7 +525,7 @@ export default function CheckGeneral({
                   </Skeleton>
                 </td>
                 <td>
-                  {nameData.avatarUrl && <Image src={nameData.avatarUrl} alt="Avatar" width="42" height="42"/>}
+                  {nameData.avatarUrl && <Image src={nameData.avatarUrl} alt="Avatar" width="42" height="42" unoptimized/>}
                 </td>
               </tr>
             : <></>}
