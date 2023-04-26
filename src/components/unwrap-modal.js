@@ -16,6 +16,7 @@ import {
 } from 'wagmi'
 import { goerli } from '@wagmi/core/chains'
 import { normalize, parseName } from '../lib/utils'
+import { usePlausible } from 'next-plausible'
 
 export default function UnwrapModal({
   name,
@@ -23,6 +24,7 @@ export default function UnwrapModal({
   open,
   setIsOpen,
 }) {
+  const plausible = usePlausible()
   const { chain } = useNetwork()
   const [isUnwrapped, setIsUnwrapped] = useState(false)
 
@@ -69,6 +71,13 @@ export default function UnwrapModal({
       } else {
         toast.success('Your name has been unwrapped!')
         setIsUnwrapped(true)
+
+        plausible('Unwrap Name', {
+          props: {
+            name: normalizedName,
+            network: chain.name,
+          }
+        })
       }
     },
   })

@@ -31,7 +31,7 @@ export default function Unwrap() {
         <meta name="description" content="Unwrap an ENS name from the Name Wrapper"/>
         <meta property="og:title" content="ENS Misc Tools - Unwrap Name"/>
         <meta property="og:description" content="Unwrap an ENS name from the Name Wrapper"/>
-        <meta property="og:image" content="https://ens-misctools.vercel.app/sharing-unwrap.jpg"/>
+        <meta property="og:image" content="https://tools.ens.domains/sharing-unwrap.jpg"/>
         <meta property="twitter:card" content="summary_large_image"/>
         <meta property="twitter:creator" content="@serenae_fansubs"/>
       </Head>
