@@ -53,7 +53,7 @@ export default function Header({ position }) {
       </Link>
       <div style={{display:'flex', flexDirection:'row', alignItems:'center'}}>
         {tagInfo?.tagValue ? <Tag colorStyle={tagInfo.tagColor} size="medium" style={{height:'min-content', marginRight:'1rem'}}>{tagInfo.tagIcon}{tagInfo.tagValue}</Tag> : <></>}
-        <ConnectButtonWrapper />
+        <ConnectButtonWrapper embedded={topLinkDisabled} />
       </div>
     </header>
   )
