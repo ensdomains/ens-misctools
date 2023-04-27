@@ -22,7 +22,7 @@ function Fuse({
     <Skeleton loading={loading} className={styles.fuseskeleton}>
       <Tooltip
         additionalGap={0}
-        content={<Typography>{fuseInfo[fuse].tooltip}</Typography>}
+        content={<Typography>{burned ? fuseInfo[fuse].burnedTooltip : fuseInfo[fuse].tooltip}</Typography>}
         mobilePlacement="top"
         mobileWidth={250}
         placement="top"
@@ -148,7 +148,8 @@ const fuseInfo = {
   1: {
     name: 'Cannot Unwrap',
     parentControlled: false,
-    tooltip: 'Revokes the permission to unwrap this name',
+    tooltip: <>This name can still be unwrapped.<br/><br/>If burned, revokes the permission to unwrap this name.</>,
+    burnedTooltip: <>This name can no longer be unwrapped.<br/><br/>The permission to unwrap this name has been revoked.</>,
     dialog: <>this name can no longer be unwrapped. The name is now <a href="https://support.ens.domains/dev-basics/namewrapper/states#locked">Locked</a>.
       <br/><br/>
       The owner of the name can burn any Owner-Controlled Fuses, as well as any subname fuses.
@@ -159,7 +160,8 @@ const fuseInfo = {
   2: {
     name: 'Cannot Burn Fuses',
     parentControlled: false,
-    tooltip: 'Revokes the permission to burn additional fuses',
+    tooltip: <>Other fuses can still be burned on this name.<br/><br/>If burned, revokes the permission to burn additional fuses.</>,
+    burnedTooltip: <>Other fuses can no longer be burned on this name.<br/><br/>The permission to burn additional fuses has been revoked.</>,
     dialog: <>no further fuses can be burned on the name.
       <br/><br/>
       More information here: <a href="https://support.ens.domains/dev-basics/namewrapper/fuses">Fuses</a>
@@ -168,7 +170,8 @@ const fuseInfo = {
   4: {
     name: 'Cannot Transfer',
     parentControlled: false,
-    tooltip: 'Revokes the permission to transfer ownership of this name',
+    tooltip: <>The NFT for this name can still be transferred.<br/><br/>If burned, revokes the permission to transfer ownership of this name.</>,
+    burnedTooltip: <>The NFT for this name can no longer be transferred.<br/><br/>The permission to transfer ownership has been revoked.</>,
     dialog: <>the name (wrapped NFT) can no longer be transferred.
       <br/><br/>
       More information here: <a href="https://support.ens.domains/dev-basics/namewrapper/fuses">Fuses</a>
@@ -177,7 +180,8 @@ const fuseInfo = {
   8: {
     name: 'Cannot Set Resolver',
     parentControlled: false,
-    tooltip: 'Revokes the permission to update the resolver contract for this name',
+    tooltip: <>The resolver for this name can still be updated.<br/><br/>If burned, revokes the permission to set the resolver for this name.</>,
+    burnedTooltip: <>The resolver for this name can no longer be updated.<br/><br/>The permission to set the resolver has been revoked.</>,
     dialog: <>the resolver contract for the name can no longer be updated.
       <br/><br/>
       More information here: <a href="https://support.ens.domains/dev-basics/namewrapper/fuses">Fuses</a>
@@ -186,7 +190,8 @@ const fuseInfo = {
   16: {
     name: 'Cannot Set TTL',
     parentControlled: false,
-    tooltip: 'Revokes the permission to update the TTL for this name',
+    tooltip: <>The TTL for this name can still be updated.<br/><br/>If burned, revokes the permission to set the TTL for this name.</>,
+    burnedTooltip: <>The TTL for this name can no longer be updated.<br/><br/>The permission to set the TTL has been revoked.</>,
     dialog: <>the TTL (client-side caching suggestion) for the name can no longer be updated.
       <br/><br/>
       More information here: <a href="https://support.ens.domains/dev-basics/namewrapper/fuses">Fuses</a>
@@ -195,7 +200,8 @@ const fuseInfo = {
   32: {
     name: 'Cannot Create Subnames',
     parentControlled: false,
-    tooltip: 'Revokes the permission to create new subnames under this name',
+    tooltip: <>New subnames can still be created under this name.<br/><br/>If burned, revokes the permission to create new subnames.</>,
+    burnedTooltip: <>New subnames can no longer be created under this name.<br/><br/>The permission to create new subnames has been revoked.</>,
     dialog: <>new subdomains can no longer be created under this name.
       <br/><br/>
       More information here: <a href="https://support.ens.domains/dev-basics/namewrapper/fuses">Fuses</a>
@@ -204,7 +210,8 @@ const fuseInfo = {
   64: {
     name: 'Cannot Approve',
     parentControlled: false,
-    tooltip: 'Revokes the permission to set/update the approved Subname Renewal Manager',
+    tooltip: <>The Subname Renewal Manager for this name can still be updated.<br/><br/>If burned, revokes the permission to update the renewal manager.</>,
+    burnedTooltip: <>The Subname Renewal Manager for this name can no longer be updated.<br/><br/>The permission to updated the renewal manager has been revoked.</>,
     dialog: <>the approved &quot;subname renewal manager&quot; for the name can no longer be updated.
       <br/><br/>
       More information here: <a href="https://support.ens.domains/dev-basics/namewrapper/fuses">Fuses</a>
@@ -213,7 +220,8 @@ const fuseInfo = {
   65536: {
     name: 'Parent Cannot Control',
     parentControlled: true,
-    tooltip: 'Revokes the permission for a parent to control a subname',
+    tooltip: <>The owner of the parent name can still revoke/replace this name, or burn fuses on this name.<br/><br/>If burned, the parent owner gives up control over this name.</>,
+    burnedTooltip: <>The owner of the parent name can no longer revoke/replace this name, or burn fuses on this name.<br/><br/>The parent owner has given up control over this name.</>,
     dialog: <>the parent will no longer be able to burn any further fuses, and will no longer be able to replace/delete the child name.
       <br/><br/>
       More information here: <a href="https://support.ens.domains/dev-basics/namewrapper/fuses">Fuses</a>
@@ -222,7 +230,8 @@ const fuseInfo = {
   131072: {
     name: 'Is .eth 2LD',
     parentControlled: true,
-    tooltip: 'Special-purpose fuse that is only burned on .eth 2LDs',
+    tooltip: <>This name is not a .eth 2LD.<br/><br/>This special-purpose fuse is only burned on .eth 2LDs.</>,
+    burnedTooltip: <>This name is a .eth 2LD.<br/><br/>This special-purpose fuse is only burned on .eth 2LDs.</>,
     dialog: <>this name is a .eth 2LD (second-level domain)
       <br/><br/>
       More information here: <a href="https://support.ens.domains/dev-basics/namewrapper/fuses">Fuses</a>
@@ -231,7 +240,8 @@ const fuseInfo = {
   262144: {
     name: 'Can Extend Expiry',
     parentControlled: true,
-    tooltip: 'Grants permission to a subname owner to extend their own subname expiry',
+    tooltip: <>This name is not allowed to extend its own expiry, only the parent owner may extend it.<br/><br/>If burned, grants the permission to extend the expiry for this name.</>,
+    burnedTooltip: <>This name is now allowed to extend its own expiry.<br/><br/>The permission to extend expiry has been granted to the owner of this name.</>,
     dialog: <>the owner of the child name will be able to extend their own expiry. Normally, only the parent owner can extend the expiry of a child name.
       <br/><br/>
       More information here: <a href="https://support.ens.domains/dev-basics/namewrapper/fuses">Fuses</a>
