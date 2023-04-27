@@ -134,8 +134,13 @@ export default function CheckWrapper({
       } = normalize(name)
 
       const {
-        isETH2LD
+        isETH2LD,
+        parentName
       } = parseName(normalizedName)
+
+      const {
+        bestDisplayName: bestParentDisplayName
+      } = normalize(parentName)
 
       const expiryStr = parseExpiry(expiry)
 
