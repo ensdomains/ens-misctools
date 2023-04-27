@@ -525,7 +525,14 @@ export default function CheckGeneral({
                   </Skeleton>
                 </td>
                 <td>
-                  {nameData.avatarUrl && <Image src={nameData.avatarUrl} alt="Avatar" width="42" height="42" unoptimized/>}
+                  {nameData.avatarUrl && 
+                    <ProgressiveImage src={nameData.avatarUrl} placeholder="/loading.gif">
+                      {(src) => (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img src={src} alt="Avatar" width="42" height="42"/>
+                      )}
+                    </ProgressiveImage>
+                  }
                 </td>
               </tr>
             : <></>}
