@@ -113,9 +113,7 @@ export default function CheckGeneral({
               } else {
                 nameData.avatarUrl = `https://metadata.ens.domains/${chain === goerli.id ? 'goerli' : 'mainnet'}/avatar/${normalizedName}`
               }
-            } catch (e) {
-              console.error(e)
-            }
+            } catch (e) {}
           }
           results1Index++
 
