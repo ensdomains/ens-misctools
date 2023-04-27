@@ -12,7 +12,7 @@ import { Toaster } from 'react-hot-toast'
 
 export default function Check() {
   const [name, setName] = useState('')
-  const delayedName = useDelayedName(name)
+  const delayedName = useDelayedName(name, '/check/')
   const onNameChange = useRouterPush('/check/', setName)
 
   return (

@@ -34,18 +34,24 @@ export function useChain(provider) {
   }
 }
 
-export function useDelayedName(name) {
+export function useDelayedName(name, basePath) {
   const [delayedName, setDelayedName] = useState('')
+  const router = useRouter()
 
   useEffect(() => {
-    const timeoutId = setTimeout(() => setDelayedName(name), 500);
+    const timeoutId = setTimeout(() => {
+      setDelayedName(name)
+      if (basePath) {
+        routerPush(router, name, basePath)
+      }
+    }, 750);
     return () => clearTimeout(timeoutId);
-  }, [name, setDelayedName]);
+  }, [router, name, basePath, setDelayedName]);
 
   return delayedName
 }
 
-function routerPush(router, name, basePath) {
+function encodeNameForRouter(name) {
   let encodedName = ''
   if (name && name.length > 0) {
     while (name.length > 0 && name.charAt(0) === ' ') {
@@ -58,13 +64,25 @@ function routerPush(router, name, basePath) {
       encodedName = encodeURIComponent(name)
     }
   }
+
+  return {
+    name,
+    encodedName
+  }
+}
+
+function routerPush(router, name, basePath) {
+  const {
+    name: updatedName,
+    encodedName
+  } = encodeNameForRouter(name)
   
   router.push(basePath + encodedName, undefined, { shallow: true })
 
-  return name
+  return updatedName
 }
 
-export function useRouterPush(basePath, setName) {
+export function useRouterPush(basePath, setName, pushImmediately) {
   const [routerQuery, setRouterQuery] = useState('')
   const [initialized, setInitialized] = useState(false)
 
@@ -93,7 +111,11 @@ export function useRouterPush(basePath, setName) {
   }, [routerQuery, initialized, onRouterQueryInit])
 
   return (name) => {
-    setName(routerPush(router, name, basePath))
+    if (pushImmediately) {
+      setName(routerPush(router, name, basePath))
+    } else {
+      setName(encodeNameForRouter(name).name)
+    }
   }
 }
 
