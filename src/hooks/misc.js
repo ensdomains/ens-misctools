@@ -39,13 +39,17 @@ export function useDelayedName(name, basePath) {
   const router = useRouter()
 
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      setDelayedName(name)
+    const delayedNameTimeoutId = setTimeout(() => setDelayedName(name), 500);
+    const routerPushTimeoutId = setTimeout(() => {
       if (basePath) {
         routerPush(router, name, basePath)
       }
-    }, 750);
-    return () => clearTimeout(timeoutId);
+    }, 2000);
+
+    return () => {
+      clearTimeout(delayedNameTimeoutId)
+      clearTimeout(routerPushTimeoutId)
+    }
   }, [router, name, basePath, setDelayedName]);
 
   return delayedName
