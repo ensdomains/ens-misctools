@@ -12,6 +12,7 @@ import {
   getUniversalResolverPrimaryName,
   convertToAddress,
   getAddress,
+  isValidAddress,
   abbreviatedValue,
   parseExpiry,
   copyToClipBoard
@@ -395,23 +396,43 @@ export default function CheckGeneral({
         }
 
         if (!nameData.manager) {
-          managerTags.push({
-            value: 'Offchain Name',
-            color: 'blueSecondary',
-            tooltip: 'This name does not exist on-chain.',
-            tooltipDialog: <>
-              This name has no owner set directly in the ENS registry. However, its resolver supports EIP-3668 &quot;CCIP-read&quot;, meaning that records can be resolved via an off-chain gateway.
-              {(!nameData.ethAddress || nameData.ethAddress === ethers.constants.AddressZero) && (
-                <>
-                  <br/><br/>
-                  No ETH address (or the null address) was resolved for this name, however. So this name may not exist in the off-chain gateway, either.
-                </>
-              )}          
-              <br/><br/>
-              More information here: <a href="https://eips.ethereum.org/EIPS/eip-3668">CCIP Read: Secure offchain data retrieval</a>
-            </>
-          })
+          if (nameData.ethAddress && nameData.ethAddress !== ethers.constants.AddressZero) {
+            managerTags.push({
+              value: 'Offchain Name',
+              color: 'blueSecondary',
+              tooltip: 'This name does not exist on-chain.',
+              tooltipDialog: <>
+                This name has no owner set directly in the ENS registry. However, its resolver supports EIP-3668 &quot;CCIP-read&quot;, meaning that records can be resolved via an off-chain gateway.      
+                <br/><br/>
+                More information here: <a href="https://eips.ethereum.org/EIPS/eip-3668">CCIP Read: Secure offchain data retrieval</a>
+              </>
+            })
+          } else {
+            managerTags.push({
+              value: 'Possible Offchain Name',
+              color: 'blueSecondary',
+              tooltip: 'This name does not exist on-chain.',
+              tooltipDialog: <>
+                This name has no owner set directly in the ENS registry. However, its resolver supports EIP-3668 &quot;CCIP-read&quot;, meaning that records can be resolved via an off-chain gateway.
+                <br/><br/>
+                No ETH address (or the null address) was resolved for this name, however. So this name may not exist in the off-chain gateway, either.
+                <br/><br/>
+                More information here: <a href="https://eips.ethereum.org/EIPS/eip-3668">CCIP Read: Secure offchain data retrieval</a>
+              </>
+            })
+          }
         }
+      }
+
+      if (!nameData.owner && !nameData.manager && !nameData.resolver && !isValidAddress(nameData.ethAddress)) {
+        managerTags.push({
+          value: 'Unregistered',
+          color: 'yellowSecondary',
+          tooltip: 'This name does not currently exist in the registry.',
+          tooltipDialog: isETH2LD ? <>
+            You can register this name on the ENS Manager App here: <a href={links.ens}>{bestDisplayName}</a>
+          </> : ''
+        })
       }
 
       if (nameData.manager && (!nameData.ethAddress || nameData.ethAddress === ethers.constants.AddressZero)) {
