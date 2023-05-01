@@ -1,12 +1,13 @@
 import styles from '../../styles/Check.module.css'
 import Head from 'next/head'
 import { useState } from 'react'
-import { Heading, Input, Card } from '@ensdomains/thorin'
+import { Heading, Input, Card, Button } from '@ensdomains/thorin'
 import Header from '../../components/header'
 import CheckNormalization from '../../components/check-normalization'
 import CheckGeneral from '../../components/check-general'
 import CheckWrapper from '../../components/check-wrapper'
 import CheckSubnames from '../../components/check-subnames'
+import { normalize, parseName } from '../../lib/utils'
 import { useRouterPush, useDelayedName } from '../../hooks/misc'
 import { Toaster } from 'react-hot-toast'
 
@@ -22,6 +23,15 @@ export default function Check() {
       onNameChange(name)
     }
   }
+
+  const {
+    isNameValid
+  } = normalize(delayedName)
+
+  const {
+    level,
+    isETH
+  } = parseName(delayedName)
 
   return (
     <>
@@ -47,14 +57,19 @@ export default function Check() {
           >
             Check an ENS name
           </Heading>
-          <Input
-            name="tname"
-            placeholder="myname.eth"
-            spellCheck="false"
-            autoCapitalize="none"
-            parentStyles={{ backgroundColor: '#fff' }}
-            onChange={(e) => onNameChange(e.target.value)}
-          />
+          <div className={styles.containerInput}>
+            <Input
+              name="tname"
+              placeholder="myname.eth"
+              spellCheck="false"
+              autoCapitalize="none"
+              parentStyles={{ backgroundColor: '#fff' }}
+              onChange={(e) => onNameChange(e.target.value)}
+            />
+            {delayedName && isNameValid && level === 1 && !isETH && <>
+              <Button className={styles.addEthButton} onClick={() => updateNameInput(delayedName + '.eth')}>Add .eth</Button>
+            </>}
+          </div>
         </div>
         <div className={styles.containerMiddle}>
           <div className={styles.containerMiddleCol}>
