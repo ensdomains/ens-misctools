@@ -13,7 +13,8 @@ import { MulticallWrapper } from 'ethers-multicall-provider'
 import toast from 'react-hot-toast'
 
 export default function CheckSubnames({
-  name
+  name,
+  updateNameInput
 }) {
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(0)
@@ -60,12 +61,14 @@ export default function CheckSubnames({
 
   const onUpdateTotalPagesSuccess = (totalPages) => {
     setTotalPages(totalPages)
+    setPage(1)
   }
 
   const onUpdateTotalPagesError = (error) => {
     toast.error('Error loading subname information')
     console.error(error)
     setTotalPages(0)
+    setPage(1)
   }
 
   const totalPagesCache = useCache('check-subnames-updatetotalpages', {name, chain}, doUpdateTotalPages, onUpdateTotalPagesSuccess, onUpdateTotalPagesError)
@@ -280,9 +283,10 @@ export default function CheckSubnames({
 
       const labelValue = subdomain.labelName || subdomain.labelhash
       const labelShortValue = subdomain.labelName || convertLabelhash(subdomain.labelhash)
+      const link = subdomain.labelName ? normalize(subdomain.labelName + '.' + name).bestDisplayName : ''
 
       return (
-        <RecordItemRow loading={showLoading} label="Label" value={labelValue} shortValue={labelShortValue} key={subdomain.labelhash || 'sub' + index} tags={tags}/>
+        <RecordItemRow loading={showLoading} label="Label" value={labelValue} shortValue={labelShortValue} key={subdomain.labelhash || 'sub' + index} link={link} updateNameInput={updateNameInput} tags={tags}/>
       )
     })
   }

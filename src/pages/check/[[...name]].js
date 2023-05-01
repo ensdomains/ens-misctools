@@ -15,6 +15,14 @@ export default function Check() {
   const delayedName = useDelayedName(name, '/check/')
   const onNameChange = useRouterPush('/check/', setName)
 
+  const updateNameInput = (name) => {
+    let tname = document.getElementsByName('tname')
+    if (tname && tname.length) {
+      tname[0].value = name
+      onNameChange(name)
+    }
+  }
+
   return (
     <>
       <Head>
@@ -55,8 +63,8 @@ export default function Check() {
               <CheckGeneral name={delayedName}/>
             </Card>
           </div>
-          <CheckWrapper name={delayedName}/>
-          <CheckSubnames name={delayedName}/>
+          <CheckWrapper name={delayedName} updateNameInput={updateNameInput}/>
+          <CheckSubnames name={delayedName} updateNameInput={updateNameInput}/>
         </div>
       </div>
 

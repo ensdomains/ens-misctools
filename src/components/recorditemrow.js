@@ -84,6 +84,8 @@ export default function RecordItemRow({
   label,
   subLabel,
   icon,
+  link,
+  updateNameInput,
   value,
   shortValue,
   tooltipValue,
@@ -109,7 +111,13 @@ export default function RecordItemRow({
             icon={icon}
             recordValue={shortValue || value}
             tooltipValue={tooltipValue}
-            onClick={async () => {await copyToClipBoard(value)}}
+            onClick={link ? (e) => {
+              if (updateNameInput) {
+                e.preventDefault()
+                updateNameInput(link)
+              }
+            } : async () => {await copyToClipBoard(value)}}
+            link={link}
           />
         </Skeleton>
       </td>

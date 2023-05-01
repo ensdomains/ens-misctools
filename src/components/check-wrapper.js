@@ -13,7 +13,8 @@ import { MulticallWrapper } from 'ethers-multicall-provider'
 import toast from 'react-hot-toast'
 
 export default function CheckWrapper({
-  name
+  name,
+  updateNameInput
 }) {
   const [nameData, setNameData] = useState(defaultNameData())
   const provider = useProvider()
@@ -296,7 +297,7 @@ export default function CheckWrapper({
           <table className={styles.itemTable}>
             <tbody>
               <RecordItemRow loading={showLoading} label="Name" value={isNameValid && bestDisplayName} tags={stateTags}/>
-              <RecordItemRow loading={showLoading} label="Parent" value={bestParentDisplayName || (isNameValid ? '[root]' : '')} tags={parentStateTags}/>
+              <RecordItemRow loading={showLoading} label="Parent" value={bestParentDisplayName || (isNameValid ? '[root]' : '')} link={bestParentDisplayName} updateNameInput={updateNameInput} tags={parentStateTags}/>
               <RecordItemRow loading={showLoading} label="Parent" subLabel="Expiry" value={parentExpiry} tags={parentExpiryTags}/>
             </tbody>
           </table>
