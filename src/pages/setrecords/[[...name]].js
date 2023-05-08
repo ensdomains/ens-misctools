@@ -235,7 +235,7 @@ export default function SetRecords() {
     mappedRecords.push({key:'', value:''})
     setTextRecords(mappedRecords)
     setLoading(false)
-  }, [setEthAddress, setTextRecords, setNameData, setLoading])
+  }, [setEthAddress, setTextRecords, setNameData, setLoading, chain, chains, provider])
 
   useEffect(() => {
     getCurrentData(delayedName)
