@@ -53,6 +53,14 @@ export default function Home() {
           </Link>
           <Typography>If you are using the latest Public Resolver, then you can use this to approve separate manager accounts that can edit your records, but can&apos;t transfer any names.</Typography>
         </Card>
+        <Card>
+          <Link href="/setrecords">
+            <a>
+              <div><Image src="/sharing-setrecords.png" alt="Set Records" width="350" height="175" priority/></div>
+            </a>
+          </Link>
+          <Typography>Set ETH address or text records if you can&apos;t use the official manager app. Useful if you&apos;re using a separate Public Resolver manager for wrapped names.</Typography>
+        </Card>
       </div>
     </>
   )

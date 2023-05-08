@@ -51,11 +51,15 @@ export function universalResolveAddr(universalResolver, name, node) {
 }
 
 export function universalResolveAvatar(universalResolver, name, node) {
+  return universalResolveTextRecord(universalResolver, name, node, 'avatar')
+}
+
+export function universalResolveTextRecord(universalResolver, name, node, key) {
   if (!node) {
     node = parseName(name).node
   }
 
-  const data = ethers.utils.defaultAbiCoder.encode(['bytes32', 'string'], [node, 'avatar'])
+  const data = ethers.utils.defaultAbiCoder.encode(['bytes32', 'string'], [node, key])
 
   return universalResolver['resolve(bytes,bytes)'](dnsEncode(name), encodeMethodData('text(bytes32,string)', data), {
     ccipReadEnabled: true

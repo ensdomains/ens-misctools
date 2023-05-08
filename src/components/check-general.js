@@ -193,7 +193,7 @@ export default function CheckGeneral({
           if (nameData.resolver && nameData.resolver !== ethers.constants.AddressZero) {
             nameData.resolverPrimaryName = getUniversalResolverPrimaryName(nameData.resolver, results2[results2Index])
             results2Index++
-            if (!(results1[results2Index] instanceof Error) && !results2[results2Index]) {
+            if (!(results2[results2Index] instanceof Error) && !results2[results2Index]) {
               nameData.isResolverWrapperAware = true
             }
             results2Index++
