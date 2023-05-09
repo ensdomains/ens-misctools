@@ -46,15 +46,40 @@ export default function SetRecordsModal({
 
   const data = []
 
-  if (ethAddress && ethers.utils.isAddress(ethAddress)) {
-    data.push(encodeMethodData('setAddr(bytes32,address)', ethers.utils.defaultAbiCoder.encode(['bytes32', 'address'], [node, ethAddress])))
+  let validEthAddress = true
+  if (ethAddress) {
+    if (ethers.utils.isAddress(ethAddress)) {
+      data.push(encodeMethodData('setAddr(bytes32,address)', ethers.utils.defaultAbiCoder.encode(['bytes32', 'address'], [node, ethAddress])))
+    } else {
+      validEthAddress = false
+    }
   }
+
+  let validRecords = true
+  const recordsObj = {}
+  let numUpdatedRecords = 0
+  let numClearedRecords = 0
 
   for (let i in records) {
     if (records[i].key) {
-      data.push(encodeMethodData('setText(bytes32,string,string)', ethers.utils.defaultAbiCoder.encode(['bytes32', 'string', 'string'], [node, records[i].key, records[i].value])))
+      if (!recordsObj[records[i].key]) {
+        data.push(encodeMethodData('setText(bytes32,string,string)', ethers.utils.defaultAbiCoder.encode(['bytes32', 'string', 'string'], [node, records[i].key, records[i].value])))
+        recordsObj[records[i].key] = true
+
+        if (records[i].value) {
+          numUpdatedRecords++
+        } else {
+          numClearedRecords++
+        }
+      } else {
+        validRecords = false
+      }
+    } else {
+      validRecords = false
     }
   }
+
+  const validData = validEthAddress && validRecords
 
   // Contract write
   const writeTx = useContractWrite({
@@ -101,14 +126,24 @@ export default function SetRecordsModal({
   return (
     <>
       <Dialog
-        open={open && isNameValid && (ethAddress || records.length > 0)}
+        open={open && isNameValid && validData}
         className="modal"
         title={<>
           <Heading as="h2" align="center">
             {isDone ? 'Records Set!' : 'Set Records'}
           </Heading>
-          {!isDone &&
-            <Typography>For: {bestDisplayName}</Typography>
+          {!isDone && <>
+              <Typography>For: {bestDisplayName}</Typography>
+              {ethAddress &&
+                <Typography>{ethAddress === ethers.constants.AddressZero ? 'Clearing' : 'Updating'} ETH address</Typography>
+              }
+              {numUpdatedRecords > 0 &&
+                <Typography>Updating {numUpdatedRecords} text record{numUpdatedRecords > 1 && 's'}</Typography>
+              }
+              {numClearedRecords > 0 &&
+                <Typography>Clearing {numClearedRecords} text record{numClearedRecords > 1 && 's'}</Typography>
+              }
+            </>
           }
         </>}
         variant="actionable"

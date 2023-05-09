@@ -107,8 +107,8 @@ export default function SetPublicResolverManagerModal({
         </>}
         variant="actionable"
         leading={
-          <>
-            {!approveTx.data && (
+          !isManagerSet ? (
+            !approveTx.data && (
               <Button
                 shadowless
                 variant="secondary"
@@ -116,8 +116,16 @@ export default function SetPublicResolverManagerModal({
               >
                 Cancel
               </Button>
-            )}
-          </>
+            )
+          ) : (
+            // Link to Set Records
+            <Button
+              as="a"
+              href={`/setrecords/${bestDisplayName}`}
+            >
+              Set Records
+            </Button>
+          )
         }
         trailing={
           isManagerSet ? (

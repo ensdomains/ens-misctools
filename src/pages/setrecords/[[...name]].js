@@ -64,6 +64,19 @@ export default function SetRecords() {
   const { address } = useAccount()
   const { chain, chains } = useChain(provider)
 
+  const getUpdatedEthAddress = (ethAddress, nameData) => {
+    if (getAddress(ethAddress) !== getAddress(nameData.ethAddress)) {
+      if (ethAddress) {
+        if (ethers.utils.isAddress(ethAddress)) {
+          return getAddress(ethAddress)
+        }
+      } else {
+        return ethers.constants.AddressZero
+      }
+    }
+    return ''
+  }
+
   const getUpdatedRecords = (textRecords, nameData) => {
     const updatedRecords = []
     const textRecordsObj = {}
@@ -76,7 +89,7 @@ export default function SetRecords() {
         })
       }
       if (textRecords[i].key) {
-        textRecordsObj[textRecords[i].key] = textRecords[i].value
+        textRecordsObj[textRecords[i].key] = true
       }
     }
 
@@ -90,6 +103,27 @@ export default function SetRecords() {
     })
 
     return updatedRecords
+  }
+
+  const isDataValid = (ethAddress, textRecords) => {
+    const validEthAddress = !ethAddress || ethers.utils.isAddress(ethAddress)
+
+    let validRecords = true
+    const recordsObj = {}
+
+    for (let i in textRecords) {
+      if (textRecords[i].key) {
+        if (!recordsObj[textRecords[i].key]) {
+          recordsObj[textRecords[i].key] = true
+        } else {
+          validRecords = false
+        }
+      } else {
+        validRecords = false
+      }
+    }
+
+    return validEthAddress && validRecords
   }
 
   const isDataChanged = (ethAddress, textRecords, nameData) => {
@@ -304,14 +338,14 @@ export default function SetRecords() {
   const isNameExpired = nameData.expiry > 0 && nameData.expiry <= (Date.now() / 1000)
   const dataChanged = isDataChanged(ethAddress, textRecords, nameData)
 
-  let updatedEthAddress = ''
-  if (getAddress(ethAddress) !== getAddress(nameData.ethAddress)) {
-    if (ethAddress) {
-      updatedEthAddress = getAddress(ethAddress)
-    } else {
-      updatedEthAddress = ethers.constants.AddressZero
-    }
-  }
+  const updatedEthAddress = getUpdatedEthAddress(ethAddress, nameData)
+  const updatedRecords = getUpdatedRecords(textRecords, nameData)
+  const dataValid = isDataValid(ethAddress, updatedRecords)
+
+  const {
+    isNameValid,
+    bestDisplayName
+  } = normalize(name)
 
   return (
     <>
@@ -327,7 +361,7 @@ export default function SetRecords() {
         <meta property="twitter:creator" content="@serenae_fansubs"/>
       </Head>
       <Header position="absolute" />
-      <div className="container container--flex">
+      <div className="container container--flex" style={{marginTop:'5rem'}}>
         <Heading
           as="h1"
           level="1"
@@ -338,9 +372,9 @@ export default function SetRecords() {
         </Heading>
         {showBanner &&
           <Banner alert="warning" title="Use the ENS Manager App!" className={styles.banner} onDismiss={() => setShowBanner(false)}>
-            This tool is only needed if you can&apos;t use the official manager app. For example, if you have just approved a separate manager for the Public Resolver, and the official manager app doesn&apos;t yet support that.
+            This tool is only needed if you can&apos;t use the official manager app. For example, if you have just approved a separate manager for the Public Resolver (since the official manager app doesn&apos;t yet support that).
             <br/><br/>
-            Go here: <a href="https://app.ens.domains/">ENS Manager App</a>
+            Go here: <a href={isNameValid && nameData.registryOwner ? `https://app.ens.domains/${bestDisplayName}?tab=records` : "https://app.ens.domains/"}>ENS Manager App</a>
           </Banner>
         }
         <form
@@ -383,7 +417,7 @@ export default function SetRecords() {
               return toast.error('Name is expired')
             }
 
-            if (ethAddress && !isValidAddress(ethAddress)) {
+            if (ethAddress && !ethers.utils.isAddress(ethAddress)) {
               return toast.error('ETH address is invalid')
             }
 
@@ -423,6 +457,10 @@ export default function SetRecords() {
 
             if (!isApproved && nameData.owner !== address) {
               return toast.error('You are not a manager for this name')
+            }
+
+            if (!isDataValid(ethAddress, getUpdatedRecords(textRecords, nameData))) {
+              return toast.error('Record data is invalid')
             }
 
             setDialogOpen(true)
@@ -478,7 +516,7 @@ export default function SetRecords() {
           <Button
             type="submit"
             variant="action"
-            disabled={loading || !nameData.registryOwner || resolverNotSet || !dataChanged}
+            disabled={loading || !nameData.registryOwner || resolverNotSet || !dataChanged || !dataValid}
             style={{marginTop: '0.5rem'}}
           >
             Submit
@@ -487,8 +525,8 @@ export default function SetRecords() {
             name={nameData.name}
             resolver={nameData.registryResolver}
             ethAddress={updatedEthAddress}
-            records={getUpdatedRecords(textRecords, nameData)}
-            open={dialogOpen}
+            records={updatedRecords}
+            open={dialogOpen && dataValid}
             setIsOpen={setDialogOpen}
           />
         </form>
