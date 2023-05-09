@@ -201,12 +201,12 @@ export default function SetRecordsModal({
           <Typography size="base" style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
             {isDone && (
               <p>
-                {ethAddress && updatedRecords.length > 0 ? <>
-                  You successfully updated the ETH address and {updatedRecords.length} text records!
+                {ethAddress && records.length > 0 ? <>
+                  You successfully updated the ETH address and {records.length} text records!
                 </> : ethAddress ? <>
                   You successfully updated the ETH address!
-                </> : updatedRecords.length > 0 ? <>
-                  You successfully updated {updatedRecords.length} text records!
+                </> : records.length > 0 ? <>
+                  You successfully updated {records.length} text records!
                 </> : <></>}
               </p>
             )}

@@ -250,7 +250,9 @@ export default function SetRecords() {
 
                 const results2 = await Promise.all(batch2)
                 for (let i in texts) {
-                  nameData.records[texts[i]] = results2[i]
+                  if (results2[i]) {
+                    nameData.records[texts[i]] = results2[i]
+                  }
                 }
               }
             } catch (e) {
