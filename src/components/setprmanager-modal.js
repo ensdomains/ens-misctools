@@ -117,7 +117,7 @@ export default function SetPublicResolverManagerModal({
                 Cancel
               </Button>
             )
-          ) : (
+          ) : approve && (
             // Link to Set Records
             <Button
               as="a"
