@@ -118,8 +118,9 @@ export default function SetRecordsModal({
   })
 
   const dismiss = () => {
-    setIsDone(false)
-    writeTx.reset()
+    // Uncomment if state should be reset
+    // setIsDone(false)
+    // writeTx.reset()
     setIsOpen(false)
   }
 
