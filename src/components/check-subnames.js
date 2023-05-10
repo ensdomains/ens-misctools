@@ -123,8 +123,12 @@ export default function CheckSubnames({
 
               const results = await Promise.all(batch)
               const resultIndex = {i: 0}
+              const unknownLabels = []
 
               subs.forEach((sub) => {
+                if (!sub.labelName) {
+                  unknownLabels.push(sub.labelhash)
+                }
                 sub.registryOwner = getAddress(results[resultIndex.i++])
                 const wrapperData = results[resultIndex.i++]
                 sub.wrapperData = {
@@ -133,6 +137,9 @@ export default function CheckSubnames({
                   expiry: wrapperData.expiry
                 }
                 sub.subdomains.forEach((sub) => {
+                  if (!sub.labelName) {
+                    unknownLabels.push(sub.labelhash)
+                  }
                   sub.registryOwner = getAddress(results[resultIndex.i++])
                   const wrapperData = results[resultIndex.i++]
                   sub.wrapperData = {
@@ -141,6 +148,9 @@ export default function CheckSubnames({
                     expiry: wrapperData.expiry
                   }
                   sub.subdomains.forEach((sub) => {
+                    if (!sub.labelName) {
+                      unknownLabels.push(sub.labelhash)
+                    }
                     sub.registryOwner = getAddress(results[resultIndex.i++])
                     const wrapperData = results[resultIndex.i++]
                     sub.wrapperData = {
@@ -151,6 +161,42 @@ export default function CheckSubnames({
                   })
                 })
               })
+
+              if (unknownLabels.length > 0) {
+                const response = await fetch(`https://api.thegraph.com/subgraphs/name/ensdomains/ens${chain === goerli.id ? 'goerli' : ''}`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({query: `query {${unknownLabels.map((labelhash, i) => `label${i}: domains(where:{labelhash:"${labelhash}",labelName_not:null}first:1){labelName}`)}}`})
+                });
+                const rsp = await response.json();
+
+                if (rsp.data) {
+                  const labelMap = {}
+
+                  unknownLabels.forEach((labelhash, i) => {
+                    const labelResult = rsp.data[`label${i}`]
+                    if (labelResult && labelResult.length > 0) {
+                      labelMap[labelhash] = labelResult[0].labelName
+                    }
+                  })
+
+                  subs.forEach((sub) => {
+                    if (!sub.labelName && labelMap[sub.labelhash]) {
+                      sub.labelName = labelMap[sub.labelhash]
+                    }
+                    sub.subdomains.forEach((sub) => {
+                      if (!sub.labelName && labelMap[sub.labelhash]) {
+                        sub.labelName = labelMap[sub.labelhash]
+                      }
+                      sub.subdomains.forEach((sub) => {
+                        if (!sub.labelName && labelMap[sub.labelhash]) {
+                          sub.labelName = labelMap[sub.labelhash]
+                        }
+                      })
+                    })
+                  })
+                }
+              }
             }
             
             nameData.subdomains[page] = subs
