@@ -2,7 +2,7 @@ import styles from '../styles/Check.module.css'
 import { Card, Heading, Typography, PageButtons } from '@ensdomains/thorin'
 import RecordItemRow from './recorditemrow'
 import { ensConfig } from '../lib/constants'
-import { validChain, normalize, parseName, hasExpiry, parseExpiry, getAddress } from '../lib/utils'
+import { validChain, normalize, parseName, hasExpiry, parseExpiry, getAddress, isValidAddress } from '../lib/utils'
 import useCache from '../hooks/cache'
 import { useChain } from '../hooks/misc'
 import { useState } from 'react'
@@ -214,48 +214,53 @@ export default function CheckSubnames({
 
       if (subdomain.wrapperData) {
         const nameWrapperAddress = ensConfig[chain]?.NameWrapper?.address
-        const isEmancipated = (subdomain.wrapperData.fuses & 65536) === 65536
-        const isLocked = (subdomain.wrapperData.fuses & 1) === 1
+        const isWrapped = subdomain.registryOwner === nameWrapperAddress && isValidAddress(subdomain.wrapperData.owner)
+        const isEmancipated = isWrapped && (subdomain.wrapperData.fuses & 65536) === 65536
+        const isLocked = isWrapped && (subdomain.wrapperData.fuses & 1) === 1
         const expiryStr = parseExpiry(subdomain.wrapperData.expiry)
 
-        if (subdomain.wrapperData.owner !== ethers.constants.AddressZero) {
-          if (isLocked) {
-            tags.push({
-              value: 'Locked',
-              color: 'yellowSecondary',
-              tooltip: 'This subname can no longer be unwrapped.',
-              tooltipDialog: <>
-                The parent owner also cannot delete/replace this name, or burn any additional fuses.
-                <br/><br/>
-                Be aware of the implications, especially if you are planning on purchasing the parent name &quot;<Typography>{bestDisplayName}</Typography>&quot;.
-                <br/><br/>
-                Even if the parent name is purchased / transferred, you will <b>not be able to replace</b> this subname.
-                <br/><br/>
-                This will be true until the subname expiry on <b>{expiryStr}</b>.
-                <br/><br/>
-                When the expiry is reached, the owner will lose ownership of this subname, and the parent owner will then be able to recreate/replace it.
-                <br/><br/>
-                More information here: <a href="https://support.ens.domains/dev-basics/namewrapper/expiry">Expiry</a>
-              </>
-            })
-          } else if (isEmancipated) {
-            tags.push({
-              value: 'Emancipated',
-              color: 'yellowSecondary',
-              tooltip: <>This name can no longer be deleted/replaced by the owner of the parent name &quot;<Typography>{bestDisplayName}</Typography>&quot;.</>,
-              tooltipDialog: <>
-                Be aware of the implications, especially if you are planning on purchasing the parent name &quot;<Typography>{bestDisplayName}</Typography>&quot;.
-                <br/><br/>
-                Even if the parent name is purchased / transferred, you will <b>not be able to replace</b> this subname.
-                <br/><br/>
-                This will be true until the subname expiry on <b>{expiryStr}</b>.
-                <br/><br/>
-                When the expiry is reached, the owner will lose ownership of this subname, and the parent owner will then be able to recreate/replace it.
-                <br/><br/>
-                More information here: <a href="https://support.ens.domains/dev-basics/namewrapper/expiry">Expiry</a>
-              </>
-            })
-          }
+        if (isLocked) {
+          tags.push({
+            value: 'Locked',
+            color: 'yellowSecondary',
+            tooltip: 'This subname is wrapped and can no longer be unwrapped.',
+            tooltipDialog: <>
+              The parent owner also cannot delete/replace this name, or burn any additional fuses.
+              <br/><br/>
+              Be aware of the implications, especially if you are planning on purchasing the parent name &quot;<Typography>{bestDisplayName}</Typography>&quot;.
+              <br/><br/>
+              Even if the parent name is purchased / transferred, you will <b>not be able to replace</b> this subname.
+              <br/><br/>
+              This will be true until the subname expiry on <b>{expiryStr}</b>.
+              <br/><br/>
+              When the expiry is reached, the owner will lose ownership of this subname, and the parent owner will then be able to recreate/replace it.
+              <br/><br/>
+              More information here: <a href="https://support.ens.domains/dev-basics/namewrapper/expiry">Expiry</a>
+            </>
+          })
+        } else if (isEmancipated) {
+          tags.push({
+            value: 'Emancipated',
+            color: 'yellowSecondary',
+            tooltip: <>This name is wrapped and can no longer be deleted/replaced by the owner of the parent name &quot;<Typography>{bestDisplayName}</Typography>&quot;.</>,
+            tooltipDialog: <>
+              Be aware of the implications, especially if you are planning on purchasing the parent name &quot;<Typography>{bestDisplayName}</Typography>&quot;.
+              <br/><br/>
+              Even if the parent name is purchased / transferred, you will <b>not be able to replace</b> this subname.
+              <br/><br/>
+              This will be true until the subname expiry on <b>{expiryStr}</b>.
+              <br/><br/>
+              When the expiry is reached, the owner will lose ownership of this subname, and the parent owner will then be able to recreate/replace it.
+              <br/><br/>
+              More information here: <a href="https://support.ens.domains/dev-basics/namewrapper/expiry">Expiry</a>
+            </>
+          })
+        } else if (isWrapped) {
+          tags.push({
+            value: 'Wrapped',
+            color: 'blueSecondary',
+            tooltip: <>This name is wrapped, but can still be deleted/replaced by the owner of the parent name &quot;<Typography>{bestDisplayName}</Typography>&quot;.</>
+          })
         }
 
         if (hasExpiry(subdomain.wrapperData.expiry) && subdomain.registryOwner === nameWrapperAddress) {
