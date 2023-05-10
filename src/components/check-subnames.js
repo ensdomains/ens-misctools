@@ -322,9 +322,11 @@ export default function CheckSubnames({
         <RecordItemRow loading={showLoading} label="Label" value={labelValue} shortValue={labelShortValue} key={subdomain.labelhash} link={link} updateNameInput={updateNameInput} tags={tags} indent={indent}/>
       )
 
-      subdomain.subdomains.forEach((subsubdomain) => {
-        createSubnameRow(subsubdomain, (subdomain.labelName && parentName) ? subdomain.labelName + '.' + parentName : '', (indent || 0) + 1)
-      })
+      if (subdomain.subdomains) {
+        subdomain.subdomains.forEach((subsubdomain) => {
+          createSubnameRow(subsubdomain, (subdomain.labelName && parentName) ? subdomain.labelName + '.' + parentName : '', (indent || 0) + 1)
+        })
+      }
     }
 
     subs.forEach((subdomain) => createSubnameRow(subdomain, name))
