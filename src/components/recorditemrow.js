@@ -95,7 +95,8 @@ export default function RecordItemRow({
   secondaryShortValue,
   secondaryIcon,
   secondaryInline,
-  tags
+  tags,
+  indent
 }) {
   const getIcon = (icon, color) => {
     return icon || (containsIgnoreCase(color, 'red') ? <CrossCircleSVG/> : containsIgnoreCase(color, 'green') ? <CheckCircleSVG/> : <InfoCircleSVG/>)
@@ -103,7 +104,7 @@ export default function RecordItemRow({
 
   return (
     <tr>
-      <td>
+      <td style={{paddingLeft: ((indent || 0) * 1.5) + 'rem'}}>
         <Skeleton loading={loading}>
           <RecordItemWithTooltip
             keyLabel={label}

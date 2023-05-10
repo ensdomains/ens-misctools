@@ -100,25 +100,58 @@ export default function CheckSubnames({
             const response = await fetch(`https://api.thegraph.com/subgraphs/name/ensdomains/ens${chain === goerli.id ? 'goerli' : ''}`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({query: `query {domain(id:"${node}"){subdomains(orderBy:labelhash,first:${limit},skip:${offset}){id labelName labelhash}}}`})
+              body: JSON.stringify({query: `query {domain(id:"${node}"){subdomains(orderBy:labelhash,first:${limit},skip:${offset}){id labelName labelhash subdomains(orderBy:labelhash,first:10){id labelName labelhash subdomains(orderBy:labelhash,first:10) {id labelName labelhash}}}}}`})
             });
             const rsp = await response.json();
 
             let subs = rsp.data?.domain?.subdomains || []
 
-            // Get registry owners
-            const registryResults = await Promise.all(subs.map(subdomain => registry.owner(subdomain.id)))
-            registryResults.forEach((result, index) => {subs[index].registryOwner = getAddress(result)})
+            if (subs.length > 0) {
+              const batch = []
+              subs.forEach((sub) => {
+                batch.push(registry.owner(sub.id))
+                batch.push(nameWrapper.getData(sub.id))
+                sub.subdomains.forEach((sub) => {
+                  batch.push(registry.owner(sub.id))
+                  batch.push(nameWrapper.getData(sub.id))
+                  sub.subdomains.forEach((sub) => {
+                    batch.push(registry.owner(sub.id))
+                    batch.push(nameWrapper.getData(sub.id))
+                  })
+                })
+              })
 
-            // Get wrapped data
-            const wrapperResults = await Promise.all(subs.map(subdomain => nameWrapper.getData(subdomain.id)))
-            wrapperResults.forEach((result, index) => {
-              subs[index].wrapperData = {
-                owner: getAddress(result.owner),
-                fuses: result.fuses,
-                expiry: result.expiry
-              }
-            })
+              const results = await Promise.all(batch)
+              const resultIndex = {i: 0}
+
+              subs.forEach((sub) => {
+                sub.registryOwner = getAddress(results[resultIndex.i++])
+                const wrapperData = results[resultIndex.i++]
+                sub.wrapperData = {
+                  owner: getAddress(wrapperData.owner),
+                  fuses: wrapperData.fuses,
+                  expiry: wrapperData.expiry
+                }
+                sub.subdomains.forEach((sub) => {
+                  sub.registryOwner = getAddress(results[resultIndex.i++])
+                  const wrapperData = results[resultIndex.i++]
+                  sub.wrapperData = {
+                    owner: getAddress(wrapperData.owner),
+                    fuses: wrapperData.fuses,
+                    expiry: wrapperData.expiry
+                  }
+                  sub.subdomains.forEach((sub) => {
+                    sub.registryOwner = getAddress(results[resultIndex.i++])
+                    const wrapperData = results[resultIndex.i++]
+                    sub.wrapperData = {
+                      owner: getAddress(wrapperData.owner),
+                      fuses: wrapperData.fuses,
+                      expiry: wrapperData.expiry
+                    }
+                  })
+                })
+              })
+            }
             
             nameData.subdomains[page] = subs
             nameData.success = true
@@ -171,12 +204,12 @@ export default function CheckSubnames({
   if (totalPages > 0 && !subs) {
     showLoading = true
   }
-  let subnameRows = <></>
+  const subnameRows = []
 
   if (!showLoading && validChain(chain, chains)) {
     subs = nameData.subdomains[page] || []
 
-    subnameRows = subs.map((subdomain, index) => {
+    const createSubnameRow = (subdomain, parentName, indent) => {
       const tags = []
 
       if (subdomain.wrapperData) {
@@ -283,12 +316,18 @@ export default function CheckSubnames({
 
       const labelValue = subdomain.labelName || subdomain.labelhash
       const labelShortValue = subdomain.labelName || convertLabelhash(subdomain.labelhash)
-      const link = subdomain.labelName ? normalize(subdomain.labelName + '.' + name).bestDisplayName : ''
+      const link = (subdomain.labelName && parentName) ? normalize(subdomain.labelName + '.' + parentName).bestDisplayName : ''
 
-      return (
-        <RecordItemRow loading={showLoading} label="Label" value={labelValue} shortValue={labelShortValue} key={subdomain.labelhash || 'sub' + index} link={link} updateNameInput={updateNameInput} tags={tags}/>
+      subnameRows.push(
+        <RecordItemRow loading={showLoading} label="Label" value={labelValue} shortValue={labelShortValue} key={subdomain.labelhash} link={link} updateNameInput={updateNameInput} tags={tags} indent={indent}/>
       )
-    })
+
+      subdomain.subdomains.forEach((subsubdomain) => {
+        createSubnameRow(subsubdomain, (subdomain.labelName && parentName) ? subdomain.labelName + '.' + parentName : '', (indent || 0) + 1)
+      })
+    }
+
+    subs.forEach((subdomain) => createSubnameRow(subdomain, name))
   }
 
   return (
