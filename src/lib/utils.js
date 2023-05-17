@@ -79,9 +79,13 @@ export function getUniversalResolverPrimaryName(address, result) {
   return ''
 }
 
-export function convertToAddress(bytes32) {
+export function convertToAddress(bytes) {
   try {
-    return getAddress(ethers.utils.defaultAbiCoder.decode(['address'], bytes32)[0])
+    // Ignore arbitrary bytes that may incorrectly be returned by a resolver
+    if (bytes && typeof bytes === 'string' && bytes.indexOf('0x') === 0 && bytes.length > 66) { 
+      return ''
+    }
+    return getAddress(ethers.utils.defaultAbiCoder.decode(['address'], bytes)[0])
   } catch (e) {
     console.error(e)
     return ''

@@ -35,6 +35,7 @@ export default function CheckGeneral({
   const [nameData, setNameData] = useState(defaultNameData())
   const provider = useProvider()
   const { chain, chains, hasProvider, isChainSupported } = useChain(provider)
+  const [avatarLoadingErrors, setAvatarLoadingErrors] = useState({})
   const [imageLoadingErrors, setImageLoadingErrors] = useState({})
 
   const doUpdate = async ({name, chain}) => {
@@ -252,6 +253,7 @@ export default function CheckGeneral({
 
   let nftMetadataLink = ''
   let nftMetadataImage = ''
+  let isNameExpired = false
 
   if (!showLoading && validChain(chain, chains)) {
     const {
@@ -463,6 +465,7 @@ export default function CheckGeneral({
         const days90Ms = 90 * 24 * 60 * 60 * 1000
 
         if (nowMs >= epochMs) {
+          isNameExpired = true
           const graceEnd = epochMs + days90Ms
 
           expiryTags.push({
@@ -544,8 +547,8 @@ export default function CheckGeneral({
                   </Skeleton>
                 </td>
                 <td>
-                  {nameData.avatarUrl && 
-                    <ProgressiveImage src={nameData.avatarUrl} placeholder="/loading.gif">
+                  {nameData.avatarUrl && avatarLoadingErrors[name] !== true &&
+                    <ProgressiveImage src={nameData.avatarUrl} placeholder="/loading.gif" onError={() => setAvatarLoadingErrors({[name]:true})}>
                       {(src) => (
                         /* eslint-disable-next-line @next/next/no-img-element */
                         <img src={src} alt="Avatar" width="42" height="42"/>
@@ -578,7 +581,7 @@ export default function CheckGeneral({
               <a>
                 <div>
                   {name && imageLoadingErrors[name] === true ? (
-                    <Image src="/error-loading-nft-image.jpg" alt="ENS NFT Image" width="132" height="132" style={{marginLeft:'1rem'}}/>
+                    <Image src={isNameExpired ? "/name-expired.jpg" : "/error-loading-nft-image.jpg"} alt="ENS NFT Image" width="132" height="132" style={{marginLeft:'1rem'}}/>
                   ) : (
                     <ProgressiveImage src={nftMetadataImage} placeholder="/loading-name.png" onError={() => setImageLoadingErrors({[name]:true})}>
                       {(src) => (
