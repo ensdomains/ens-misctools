@@ -29,3 +29,9 @@
 .radiorow > div {
   margin-right: 1rem;
 }
+
+.addresstext {
+  align-self: start;
+  margin-left: 0.5rem;
+  height: 1.25rem;
+}
