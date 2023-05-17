@@ -29,7 +29,7 @@ import {
   isValidAddress,
   universalResolveAddr
 } from '../../lib/utils'
-import { useChain, useDelayedName, useRouterPush } from '../../hooks/misc'
+import { useChain, useDelayedName, useRouterPush, useRouterUpdate } from '../../hooks/misc'
 
 export default function SetRecords() {
   function defaultNameData() {
@@ -59,6 +59,7 @@ export default function SetRecords() {
 
   const delayedName = useDelayedName(name, '/setrecords/')
   const onNameChange = useRouterPush('/setrecords/', setName)
+  useRouterUpdate('/setrecords/', name, onNameChange)
 
   const provider = useProvider()
   const { address } = useAccount()

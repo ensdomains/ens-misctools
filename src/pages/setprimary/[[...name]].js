@@ -25,7 +25,7 @@ import {
   getAddress,
   isValidAddress
 } from '../../lib/utils'
-import { useChain, useRouterPush, useDelayedName } from '../../hooks/misc'
+import { useChain, useRouterPush, useRouterUpdate, useDelayedName } from '../../hooks/misc'
 
 export default function SetPrimary() {
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -37,6 +37,7 @@ export default function SetPrimary() {
 
   const delayedNameOrAddress = useDelayedName(nameOrAddress, '/setprimary/')
   const onNameChange = useRouterPush('/setprimary/', setNameOrAddress)
+  useRouterUpdate('/setprimary/', nameOrAddress, onNameChange)
 
   const provider = useProvider()
   const { address } = useAccount()

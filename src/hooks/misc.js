@@ -123,9 +123,43 @@ export function useRouterPush(basePath, setName, pushImmediately) {
   }
 }
 
+export function useRouterUpdate(basePath, name, onNameChange) {
+  const router = useRouter()
+
+  if (basePath && basePath.charAt(basePath.length - 1) === '/') {
+    basePath = basePath.substring(0, basePath.length - 1)
+  }
+
+  useEffect(() => {
+    const handleRouteChange = (url) => {
+      if (url && url.indexOf(basePath) === 0) {
+        let routerName = url.substring(basePath.length)
+        if (routerName.indexOf('/') === 0) {
+          routerName = routerName.substring(1)
+        }
+        const decodedName = decodeURIComponent(routerName)
+
+        if (name !== decodedName) {
+          let tname = document.getElementsByName('tname')
+          if (tname && tname.length) {
+            tname[0].value = decodedName
+            onNameChange(decodedName)
+          }
+        }
+      }
+    }
+    router.events.on('routeChangeStart', handleRouteChange)
+
+    return () => {
+      router.events.off('routeChangeStart', handleRouteChange)
+    }
+  }, [router, basePath, name, onNameChange])
+}
+
 const exports = {
   useChain,
   useDelayedName,
-  useRouterPush
+  useRouterPush,
+  useRouterUpdate
 }
 export default exports

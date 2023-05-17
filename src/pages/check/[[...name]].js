@@ -8,13 +8,14 @@ import CheckGeneral from '../../components/check-general'
 import CheckWrapper from '../../components/check-wrapper'
 import CheckSubnames from '../../components/check-subnames'
 import { normalize, parseName } from '../../lib/utils'
-import { useRouterPush, useDelayedName } from '../../hooks/misc'
+import { useRouterPush, useRouterUpdate, useDelayedName } from '../../hooks/misc'
 import { Toaster } from 'react-hot-toast'
 
 export default function Check() {
   const [name, setName] = useState('')
   const delayedName = useDelayedName(name, '/check/')
   const onNameChange = useRouterPush('/check/', setName)
+  useRouterUpdate('/check/', name, onNameChange)
 
   const updateNameInput = (name) => {
     let tname = document.getElementsByName('tname')

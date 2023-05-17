@@ -9,7 +9,7 @@ import UnwrapModal from '../../components/unwrap-modal'
 import toast, { Toaster } from 'react-hot-toast'
 import { ensConfig } from '../../lib/constants'
 import { validChain, normalize, parseName } from '../../lib/utils'
-import { useChain, useDelayedName, useRouterPush } from '../../hooks/misc'
+import { useChain, useDelayedName, useRouterPush, useRouterUpdate } from '../../hooks/misc'
 
 export default function Unwrap() {
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -18,6 +18,7 @@ export default function Unwrap() {
 
   const delayedName = useDelayedName(name, '/unwrap/')
   const onNameChange = useRouterPush('/unwrap/', setName)
+  useRouterUpdate('/unwrap/', name, onNameChange)
 
   const provider = useProvider()
   const { address } = useAccount()
