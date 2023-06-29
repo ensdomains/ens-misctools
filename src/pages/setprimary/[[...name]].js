@@ -253,7 +253,7 @@ export default function SetPrimary() {
               }
             }
 
-            let isForAddrMode = getAddress(nameData.address) !== getAddress(address)
+            let isForAddrMode = getAddress(nameData.address) !== getAddress(address) || nameData.isContract
             let useReverseRegistrar = true
 
             if (isForAddrMode) {

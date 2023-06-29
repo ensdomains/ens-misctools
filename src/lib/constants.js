@@ -1,4 +1,4 @@
-import { mainnet, goerli } from '@wagmi/core/chains'
+import { mainnet, goerli, sepolia } from '@wagmi/core/chains'
 
 const registryABI = require('./ens-registry-abi.json')
 const ethRegistrarABI = require('./ens-eth-registrar-abi.json')
@@ -35,7 +35,7 @@ export const ensConfig = {
       abi: latestPublicResolverABI,
     },
     UniversalResolver: {
-      address: '0xc0497E381f536Be9ce14B0dD3817cBcAe57d2F62',
+      address: '0x9380F1974D2B7064eA0c0EC251968D8c69f0Ae31',
       abi: universalResolverABI
     },
   },
@@ -69,7 +69,36 @@ export const ensConfig = {
       abi: latestPublicResolverABI,
     },
     UniversalResolver: {
-      address: '0x56522d00c410a43bffdf00a9a569489297385790',
+      address: '0x3952Be0b2186f8B113193a84b69bD71ad3fc1ae3',
+      abi: universalResolverABI
+    },
+  },
+  [sepolia.id]: {
+    Registry: {
+      address: '0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e',
+      abi: registryABI,
+    },
+    ETHRegistrar: {
+      address: '0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85',
+      abi: ethRegistrarABI,
+    },
+    NameWrapper: {
+      address: '0x0635513f179D50A207757E05759CbD106d7dFcE8',
+      abi: nameWrapperABI,
+    },
+    ReverseRegistrar: {
+      address: '0xA0a1AbcDAe1a2a4A2EF8e9113Ff0e02DD81DC0C6',
+      abi: reverseRegistrarABI,
+    },
+    publicResolvers: [
+      '0x8FADE66B79cC9f707aB26799354482EB93a5B7dD'
+    ],
+    LatestPublicResolver: {
+      address: '0x8FADE66B79cC9f707aB26799354482EB93a5B7dD',
+      abi: latestPublicResolverABI,
+    },
+    UniversalResolver: {
+      address: '',
       abi: universalResolverABI
     },
   },
