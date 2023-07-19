@@ -4,14 +4,14 @@ import { ThemeProvider } from 'styled-components'
 import { ThorinGlobalStyles, lightTheme } from '@ensdomains/thorin'
 import { getDefaultWallets, RainbowKitProvider } from '@rainbow-me/rainbowkit'
 import { configureChains, createClient, WagmiConfig } from 'wagmi'
-import { mainnet, goerli } from '@wagmi/core/chains'
+import { mainnet, goerli, sepolia } from '@wagmi/core/chains'
 import { infuraProvider } from 'wagmi/providers/infura'
 import { alchemyProvider } from 'wagmi/providers/alchemy'
 import { publicProvider } from 'wagmi/providers/public'
 import PlausibleProvider from 'next-plausible'
 
 const { chains, provider } = configureChains(
-  [mainnet, goerli],
+  [mainnet, goerli, sepolia],
   [
     infuraProvider({ apiKey: process.env.INFURA_API_KEY }),
     alchemyProvider({ apiKey: process.env.ALCHEMY_API_KEY }),

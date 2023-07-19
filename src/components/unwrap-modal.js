@@ -14,7 +14,7 @@ import {
   useNetwork,
   useWaitForTransaction,
 } from 'wagmi'
-import { goerli } from '@wagmi/core/chains'
+import { goerli, sepolia } from '@wagmi/core/chains'
 import { normalize, parseName } from '../lib/utils'
 import { usePlausible } from 'next-plausible'
 
@@ -121,7 +121,7 @@ export default function UnwrapModal({
             // Link to Etherscan
             <Button
               as="a"
-              href={`https://${chain?.id === goerli.id ? 'goerli.' : ''}etherscan.io/tx/${unwrap.data.hash}`}
+              href={`https://${chain?.id === goerli.id ? 'goerli.' : chain?.id === sepolia.id ? 'sepolia.' : ''}etherscan.io/tx/${unwrap.data.hash}`}
               target="_blank"
               rel="noreferrer"
             >

@@ -13,7 +13,7 @@ import {
   useNetwork,
   useWaitForTransaction,
 } from 'wagmi'
-import { goerli } from '@wagmi/core/chains'
+import { goerli, sepolia } from '@wagmi/core/chains'
 import { normalize, namehash, isValidAddress } from '../lib/utils'
 import { usePlausible } from 'next-plausible'
 
@@ -241,7 +241,7 @@ export default function SetPrimaryModal({
             // Link to Etherscan
             <Button
               as="a"
-              href={`https://${chain?.id === goerli.id ? 'goerli.' : ''}etherscan.io/tx/${setNameTx.data?.hash || setResolver.data.hash}`}
+              href={`https://${chain?.id === goerli.id ? 'goerli.' : chain?.id === sepolia.id ? 'sepolia.' : ''}etherscan.io/tx/${setNameTx.data?.hash || setResolver.data.hash}`}
               target="_blank"
               rel="noreferrer"
             >

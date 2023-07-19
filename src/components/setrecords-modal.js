@@ -13,7 +13,7 @@ import {
   useNetwork,
   useWaitForTransaction,
 } from 'wagmi'
-import { goerli } from '@wagmi/core/chains'
+import { goerli, sepolia } from '@wagmi/core/chains'
 import { ethers } from 'ethers'
 import {
   normalize,
@@ -176,7 +176,7 @@ export default function SetRecordsModal({
             // Link to Etherscan
             <Button
               as="a"
-              href={`https://${chain?.id === goerli.id ? 'goerli.' : ''}etherscan.io/tx/${writeTx.data?.hash}`}
+              href={`https://${chain?.id === goerli.id ? 'goerli.' : chain?.id === sepolia.id ? 'sepolia.' : ''}etherscan.io/tx/${writeTx.data?.hash}`}
               target="_blank"
               rel="noreferrer"
             >

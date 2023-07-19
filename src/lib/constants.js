@@ -98,7 +98,7 @@ export const ensConfig = {
       abi: latestPublicResolverABI,
     },
     UniversalResolver: {
-      address: '',
+      address: '0x21B000Fd62a880b2125A61e36a284BB757b76025',
       abi: universalResolverABI
     },
   },

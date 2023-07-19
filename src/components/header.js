@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { Heading, Tag, AlertSVG, EthSVG } from '@ensdomains/thorin'
 import ConnectButtonWrapper from '../components/connect-button'
 import { useProvider } from 'wagmi'
-import { mainnet, goerli } from '@wagmi/core/chains'
+import { mainnet, goerli, sepolia } from '@wagmi/core/chains'
 import { useChain } from '../hooks/misc'
 import { useState, useEffect } from 'react'
 
@@ -25,6 +25,10 @@ export default function Header({ position }) {
       tagColor = 'tealPrimary'
       tagIcon = <EthSVG/>
       tagValue = 'Goerli'
+    } else if (chain === sepolia.id) {
+      tagColor = 'purplePrimary'
+      tagIcon = <EthSVG/>
+      tagValue = 'Sepolia'
     } else if (chain === 0) {
       tagValue = 'No Network'
     }

@@ -21,7 +21,7 @@ import useCache from '../hooks/cache'
 import { useChain } from '../hooks/misc'
 import { useState } from 'react'
 import { useProvider } from 'wagmi'
-import { mainnet, goerli } from '@wagmi/core/chains'
+import { mainnet, goerli, sepolia } from '@wagmi/core/chains'
 import { ethers } from 'ethers'
 import { MulticallWrapper } from 'ethers-multicall-provider'
 import toast from 'react-hot-toast'
@@ -113,7 +113,7 @@ export default function CheckGeneral({
               if (nameData.avatar.indexOf('http://') === 0 || nameData.avatar.indexOf('https://') === 0) {
                 nameData.avatarUrl = nameData.avatar
               } else {
-                nameData.avatarUrl = `https://metadata.ens.domains/${chain === goerli.id ? 'goerli' : 'mainnet'}/avatar/${normalizedName}`
+                nameData.avatarUrl = `https://metadata.ens.domains/${chain === goerli.id ? 'goerli' : chain === sepolia.id ? 'sepolia' : 'mainnet'}/avatar/${normalizedName}`
               }
             } catch (e) {}
           }
@@ -126,7 +126,7 @@ export default function CheckGeneral({
             } else {
               try {
                 // TODO: Switch off hosted service
-                const response = await fetch(`https://api.thegraph.com/subgraphs/name/ensdomains/ens${chain === goerli.id ? 'goerli' : ''}`, {
+                const response = await fetch(`https://api.thegraph.com/subgraphs/name/ensdomains/ens${chain === goerli.id ? 'goerli' : chain === sepolia.id ? 'sepolia' : ''}`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({query: `query {registration(id:"${labelhash}"){registrant{id}}}`})
@@ -305,6 +305,14 @@ export default function CheckGeneral({
 
             nftMetadataLink = `https://metadata.ens.domains/goerli/${contractAddr}/${tokenId}`
             nftMetadataImage = `https://metadata.ens.domains/goerli/${contractAddr}/${tokenId}/image`
+          }
+        } else if (chain === sepolia.id) {
+          if (nameData.manager) {
+            links.etherscan = `https://sepolia.etherscan.io/nft/${contractAddr}/${tokenId}`
+            links.opensea = `https://testnets.opensea.io/assets/sepolia/${contractAddr}/${tokenId}`
+
+            nftMetadataLink = `https://metadata.ens.domains/sepolia/${contractAddr}/${tokenId}`
+            nftMetadataImage = `https://metadata.ens.domains/sepolia/${contractAddr}/${tokenId}/image`
           }
         }
       }

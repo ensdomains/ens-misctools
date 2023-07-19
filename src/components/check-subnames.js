@@ -7,7 +7,7 @@ import useCache from '../hooks/cache'
 import { useChain } from '../hooks/misc'
 import { useState } from 'react'
 import { useProvider } from 'wagmi'
-import { goerli } from '@wagmi/core/chains'
+import { goerli, sepolia } from '@wagmi/core/chains'
 import { ethers } from 'ethers'
 import { MulticallWrapper } from 'ethers-multicall-provider'
 import toast from 'react-hot-toast'
@@ -42,7 +42,7 @@ export default function CheckSubnames({
         if (level >= 2) {
           try {
             // TODO: Switch off hosted service
-            const countResponse = await fetch(`https://api.thegraph.com/subgraphs/name/ensdomains/ens${chain === goerli.id ? 'goerli' : ''}`, {
+            const countResponse = await fetch(`https://api.thegraph.com/subgraphs/name/ensdomains/ens${chain === goerli.id ? 'goerli' : chain === sepolia.id ? 'sepolia' : ''}`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({query: `query {domain(id:"${node}"){subdomainCount}}`})
@@ -97,7 +97,7 @@ export default function CheckSubnames({
             // TODO: Switch off hosted service
             let limit = PAGE_SIZE
             let offset = (page - 1) * limit
-            const response = await fetch(`https://api.thegraph.com/subgraphs/name/ensdomains/ens${chain === goerli.id ? 'goerli' : ''}`, {
+            const response = await fetch(`https://api.thegraph.com/subgraphs/name/ensdomains/ens${chain === goerli.id ? 'goerli' : chain === sepolia.id ? 'sepolia' : ''}`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({query: `query {domain(id:"${node}"){subdomains(orderBy:labelhash,first:${limit},skip:${offset}){id labelName labelhash subdomains(orderBy:labelhash,first:10){id labelName labelhash subdomains(orderBy:labelhash,first:10) {id labelName labelhash}}}}}`})
@@ -163,7 +163,7 @@ export default function CheckSubnames({
               })
 
               if (unknownLabels.length > 0) {
-                const response = await fetch(`https://api.thegraph.com/subgraphs/name/ensdomains/ens${chain === goerli.id ? 'goerli' : ''}`, {
+                const response = await fetch(`https://api.thegraph.com/subgraphs/name/ensdomains/ens${chain === goerli.id ? 'goerli' : chain === sepolia.id ? 'sepolia' : ''}`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({query: `query {${unknownLabels.map((labelhash, i) => `label${i}: domains(where:{labelhash:"${labelhash}",labelName_not:null}first:1){labelName}`)}}`})

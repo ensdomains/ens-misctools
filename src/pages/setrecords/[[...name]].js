@@ -13,7 +13,7 @@ import {
   Banner
 } from '@ensdomains/thorin'
 import { useAccount, useProvider } from 'wagmi'
-import { goerli } from '@wagmi/core/chains'
+import { goerli, sepolia } from '@wagmi/core/chains'
 import { ethers } from 'ethers'
 import { MulticallWrapper } from 'ethers-multicall-provider'
 import Header from '../../components/header'
@@ -233,7 +233,7 @@ export default function SetRecords() {
           if (nameData.registryResolver && !nameData.offchain) {
             try {
               // TODO: Switch off hosted service
-              const response = await fetch(`https://api.thegraph.com/subgraphs/name/ensdomains/ens${chain === goerli.id ? 'goerli' : ''}`, {
+              const response = await fetch(`https://api.thegraph.com/subgraphs/name/ensdomains/ens${chain === goerli.id ? 'goerli' : chain === sepolia.id ? 'sepolia' : ''}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({query: `query {domain(id:"${node}"){resolver{texts}}}`})

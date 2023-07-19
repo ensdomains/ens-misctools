@@ -1,9 +1,19 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useDisconnect, useProvider, useAccount } from 'wagmi'
+import { mainnet, goerli, sepolia } from '@wagmi/core/chains'
 import { Button, Profile } from '@ensdomains/thorin'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
-import { copyToClipBoard, normalize } from '../lib/utils'
+import {
+  normalize,
+  parseName,
+  universalResolveAvatar,
+  universalResolvePrimaryName,
+  getUniversalResolverPrimaryName,
+  copyToClipBoard
+} from '../lib/utils'
+import { ensConfig } from '../lib/constants'
 import { useChain } from '../hooks/misc'
+import { ethers } from 'ethers'
 
 export default function ConnectButtonWrapper({
   embedded
@@ -22,7 +32,13 @@ export default function ConnectButtonWrapper({
 
     if (address) {
       try {
-        primaryName = await provider.lookupAddress(address)
+        if (chain === mainnet.id || chain === goerli.id) {
+          primaryName = await provider.lookupAddress(address)
+        } else {
+          const universalResolver = new ethers.Contract(ensConfig[chain].UniversalResolver?.address, ensConfig[chain].UniversalResolver?.abi, provider)
+          const pnResult = await universalResolvePrimaryName(universalResolver, address)
+          primaryName = getUniversalResolverPrimaryName(address, pnResult)
+        }
 
         if (primaryName) {
           const {
@@ -32,10 +48,31 @@ export default function ConnectButtonWrapper({
 
           primaryName = bestDisplayName
 
-          const resolver = await provider.getResolver(normalizedName)
-          const avatarInfo = await resolver.getAvatar()
-          if (avatarInfo) {
-            avatar = avatarInfo.url
+          const {
+            node
+          } = parseName(normalizedName)
+          
+          if (chain === mainnet.id || chain === goerli.id) {
+            const resolver = await provider.getResolver(normalizedName)
+            const avatarInfo = await resolver.getAvatar()
+            if (avatarInfo) {
+              avatar = avatarInfo.url
+            }
+          } else {
+            const universalResolver = new ethers.Contract(ensConfig[chain].UniversalResolver?.address, ensConfig[chain].UniversalResolver?.abi, provider)
+            const avatarResult = await universalResolveAvatar(universalResolver, normalizedName, node)
+            if (avatarResult && !(avatarResult instanceof Error) && avatarResult.length > 0) {
+              try {
+                const avatarInfo = ethers.utils.defaultAbiCoder.decode(['string'], avatarResult[0])[0]
+                if (avatarInfo) {
+                  if (avatarInfo.indexOf('http://') === 0 || avatarInfo.indexOf('https://') === 0) {
+                    avatar = avatarInfo
+                  } else {
+                    avatar = `https://metadata.ens.domains/${chain === goerli.id ? 'goerli' : chain === sepolia.id ? 'sepolia' : 'mainnet'}/avatar/${normalizedName}`
+                  }
+                }
+              } catch (e) {}
+            }
           }
         }
       } catch (e) {

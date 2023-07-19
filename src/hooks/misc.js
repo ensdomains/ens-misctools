@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/router'
 import { useNetwork } from 'wagmi'
-import { mainnet, goerli } from '@wagmi/core/chains'
+import { mainnet, goerli, sepolia } from '@wagmi/core/chains'
 import { validChain } from '../lib/utils'
 
-const defaultChains = [mainnet, goerli]
+const defaultChains = [mainnet, goerli, sepolia]
 
 export function useChain(provider) {
   const [hasProvider, setHasProvider] = useState(false)
