@@ -82,7 +82,7 @@ export default function ConnectButtonWrapper({
 
     setPrimaryName(primaryName)
     setAvatar(avatar)
-  }, [provider, setPrimaryName, setAvatar])
+  }, [chain, provider, setPrimaryName, setAvatar])
 
   useEffect(() => {
     getAccountData(address)
