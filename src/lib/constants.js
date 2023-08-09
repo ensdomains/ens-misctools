@@ -38,6 +38,7 @@ export const ensConfig = {
       address: '0x9380F1974D2B7064eA0c0EC251968D8c69f0Ae31',
       abi: universalResolverABI
     },
+    subgraphURL: 'https://api.thegraph.com/subgraphs/name/ensdomains/ens',
   },
   [goerli.id]: {
     Registry: {
@@ -72,6 +73,7 @@ export const ensConfig = {
       address: '0x3952Be0b2186f8B113193a84b69bD71ad3fc1ae3',
       abi: universalResolverABI
     },
+    subgraphURL: 'https://api.thegraph.com/subgraphs/name/ensdomains/ensgoerli',
   },
   [sepolia.id]: {
     Registry: {
@@ -101,5 +103,6 @@ export const ensConfig = {
       address: '0x21B000Fd62a880b2125A61e36a284BB757b76025',
       abi: universalResolverABI
     },
+    subgraphURL: 'https://api.studio.thegraph.com/query/49574/enssepolia/version/latest',
   },
 }

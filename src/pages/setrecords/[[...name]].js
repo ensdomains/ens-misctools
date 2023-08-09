@@ -233,7 +233,7 @@ export default function SetRecords() {
           if (nameData.registryResolver && !nameData.offchain) {
             try {
               // TODO: Switch off hosted service
-              const response = await fetch(`https://api.thegraph.com/subgraphs/name/ensdomains/ens${chain === goerli.id ? 'goerli' : chain === sepolia.id ? 'sepolia' : ''}`, {
+              const response = await fetch(ensConfig[chain].subgraphURL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({query: `query {domain(id:"${node}"){resolver{texts}}}`})
