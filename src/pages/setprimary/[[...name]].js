@@ -19,9 +19,12 @@ import { ensConfig } from '../../lib/constants'
 import {
   validChain,
   normalize,
+  parseName,
   namehash,
   universalResolvePrimaryName,
   getUniversalResolverPrimaryName,
+  universalResolveAddr,
+  convertToAddress,
   getAddress,
   isValidAddress
 } from '../../lib/utils'
@@ -77,13 +80,20 @@ export default function SetPrimary() {
 
           if (isNameValid) {
             nameData.name = normalizedName
-            const resolvedAddr = await provider.resolveName(normalizedName)
-            if (isValidAddress(resolvedAddr)) {
-              nameData.address = resolvedAddr
-              nameData.errorResolvingAddress = false
+
+            const universalResolver = new ethers.Contract(ensConfig[chain].UniversalResolver?.address, ensConfig[chain].UniversalResolver?.abi, provider)
+            const addrResult = await universalResolveAddr(universalResolver, normalizedName, parseName(normalizedName).node)
+            if (addrResult && !(addrResult instanceof Error) && addrResult.length > 0) {
+              const resolvedAddr = convertToAddress(addrResult[0])
+              if (isValidAddress(resolvedAddr)) {
+                nameData.address = resolvedAddr
+                nameData.errorResolvingAddress = false
+              }
             }
           }
-        } catch(e) {}
+        } catch(e) {
+          console.error(e)
+        }
       }
 
       if (nameData.address) {
