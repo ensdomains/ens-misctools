@@ -96,13 +96,17 @@ export default function CheckGeneral({
           const registryResolver = results1[results1Index]
           if (registryResolver && registryResolver !== ethers.constants.AddressZero) {
             nameData.registryResolver = getAddress(registryResolver)
+            nameData.resolver = nameData.registryResolver
           }
           results1Index++
 
           // Get resolver and ETH address (possibly via wildcard or offchain)
           if (results1[results1Index] && !(results1[results1Index] instanceof Error) && results1[results1Index].length > 1) {
             nameData.ethAddress = convertToAddress(results1[results1Index][0])
-            nameData.resolver = getAddress(results1[results1Index][1])
+            const urResolverResult = getAddress(results1[results1Index][1])
+            if (isValidAddress(urResolverResult)) {
+              nameData.resolver = urResolverResult
+            }
           }
           results1Index++
 
@@ -268,6 +272,7 @@ export default function CheckGeneral({
         nodeDecimal,
         labelhash,
         labelhashDecimal,
+        isETH,
         isETH2LD,
         eth2LDTokenId,
         wrappedTokenId
@@ -283,10 +288,13 @@ export default function CheckGeneral({
         const contractAddr = nameData.isWrapped ? ensConfig[chain].NameWrapper.address : ensConfig[chain].ETHRegistrar.address
         const tokenId = nameData.isWrapped ? wrappedTokenId : eth2LDTokenId
 
-        if (chain === mainnet.id) {  
+        if (chain === mainnet.id) {
+          if (isETH) {
+            const nameWithoutDotEth = normalizedName.substring(0, normalizedName.lastIndexOf('.'))
+            links.ensvision = `https://vision.io/name/${nameWithoutDotEth}`
+          }
           if (isETH2LD) {
-            links.ensvision = `https://ens.vision/name/${normalizedName}`
-            links.kodex = `https://kodex.io/domain/${normalizedName}`
+            links.kodex = `https://kodex.io/marketplace?domain=${normalizedName}`
           }
           if (nameData.manager) {
             links.etherscan = `https://etherscan.io/nft/${contractAddr}/${tokenId}`
