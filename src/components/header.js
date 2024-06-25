@@ -48,7 +48,7 @@ export default function Header({ position }) {
 
   return (
     <header className={['header', [position && `header--${position}`]].join(' ')}>
-      <Link href={topLinkDisabled ? '#' : '/'}>
+      <Link href={topLinkDisabled ? '#' : '/'} legacyBehavior>
         <a style={topLinkDisabled ? {cursor:'default'} : {}}>
           <Heading as="span" level="2" className="header__name">
             ENS Tools

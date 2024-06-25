@@ -26,7 +26,7 @@ import { ethers } from 'ethers'
 import { MulticallWrapper } from 'ethers-multicall-provider'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
-import Image from 'next/future/image'
+import Image from 'next/image'
 import ProgressiveImage from "react-progressive-graceful-image"
 
 export default function CheckGeneral({
@@ -622,7 +622,7 @@ function NFTLink({
   alt
 }) {
   return link ? (
-    <Link href={link}>
+    <Link href={link} legacyBehavior>
       <a style={{display:'inline-block', marginRight:'0.5rem'}}>
         <div>
           <Image src={image} alt={alt} width="22" height="22"/>
