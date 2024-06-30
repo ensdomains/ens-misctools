@@ -1,35 +1,42 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/router'
-import { useNetwork } from 'wagmi'
+import { useChainId, useChains, useConnections, useDisconnect, useSwitchChain } from 'wagmi'
 import { mainnet, goerli, sepolia } from '@wagmi/core/chains'
 import { validChain } from '../lib/utils'
 
 const defaultChains = [mainnet, goerli, sepolia]
 
-export function useChain(provider) {
-  const [hasProvider, setHasProvider] = useState(false)
+export function useChain(client) {
+  const [hasClient, setHasClient] = useState(false)
   const [isChainSupported, setChainSupported] = useState(false)
-  const [providerChain, setProviderChain] = useState(0)
-  const { chain: walletChain, chains: walletChains } = useNetwork()
+  const [clientChain, setClientChain] = useState(0)
+  const walletChain = useChainId()
+  const walletChains = useChains()
 
-  provider.getNetwork().then(network => {
-    if (network && providerChain !== network.chainId) {
-      setProviderChain(network.chainId)
+  if (client.chain) {
+    if (clientChain !== client.chain.id) {
+      setClientChain(client.chain.id)
     }
-  })
+  } else {
+    client.getChainId().then(clientChainId => {
+      if (clientChain !== clientChainId) {
+        setClientChain(clientChainId)
+      }
+    })
+  }
 
-  const chain = walletChain ? walletChain.id : providerChain
+  const chain = walletChain ? walletChain : clientChain
   const chains = walletChain ? walletChains : defaultChains
 
   useEffect(() => {
-    setHasProvider(!!chain)
+    setHasClient(!!chain)
     setChainSupported(validChain(chain, chains))
   }, [chain, chains])
 
   return {
     chain,
     chains,
-    hasProvider,
+    hasClient,
     isChainSupported
   }
 }
@@ -156,10 +163,30 @@ export function useRouterUpdate(basePath, name, onNameChange) {
   }, [router, basePath, name, onNameChange])
 }
 
+export function useDisconnectToMainnet() {
+  const connections = useConnections()
+
+  const { switchChain } = useSwitchChain()
+
+  const onSettled = useCallback(() => {
+    if (!connections || connections.length === 0) {
+      switchChain({chainId: mainnet.id})
+    }
+  }, [connections, switchChain])
+
+  // TODO: Is this right?
+  const { disconnect } = useDisconnect({
+    mutation: { onSettled }
+  })
+  
+  return { disconnect }
+}
+
 const exports = {
   useChain,
   useDelayedName,
   useRouterPush,
-  useRouterUpdate
+  useRouterUpdate,
+  useDisconnectToMainnet
 }
 export default exports

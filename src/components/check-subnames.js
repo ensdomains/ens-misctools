@@ -2,14 +2,22 @@ import styles from '../styles/Check.module.css'
 import { Card, Heading, Typography, PageButtons } from '@ensdomains/thorin'
 import RecordItemRow from './recorditemrow'
 import { ensConfig } from '../lib/constants'
-import { validChain, normalize, parseName, hasExpiry, parseExpiry, getAddress, isValidAddress } from '../lib/utils'
+import {
+  validChain,
+  normalize,
+  parseName,
+  readContract,
+  getAddress,
+  isValidAddress,
+  getMulticallResult,
+  hasExpiry,
+  parseExpiry
+} from '../lib/utils'
 import useCache from '../hooks/cache'
 import { useChain } from '../hooks/misc'
 import { useState } from 'react'
-import { useProvider } from 'wagmi'
-import { goerli, sepolia } from '@wagmi/core/chains'
-import { ethers } from 'ethers'
-import { MulticallWrapper } from 'ethers-multicall-provider'
+import { usePublicClient } from 'wagmi'
+import { getContract } from 'viem'
 import toast from 'react-hot-toast'
 
 export default function CheckSubnames({
@@ -19,8 +27,8 @@ export default function CheckSubnames({
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(0)
   const [nameData, setNameData] = useState(defaultNameData())
-  const provider = useProvider()
-  const { chain, chains, hasProvider, isChainSupported } = useChain(provider)
+  const client = usePublicClient()
+  const { chain, chains, hasClient, isChainSupported } = useChain(client)
 
   const PAGE_SIZE = 10
 
@@ -90,9 +98,8 @@ export default function CheckSubnames({
 
         if (level >= 2) {
           try {
-            const multi = MulticallWrapper.wrap(provider)
-            const registry = new ethers.Contract(ensConfig[chain].Registry?.address, ensConfig[chain].Registry?.abi, multi)
-            const nameWrapper = new ethers.Contract(ensConfig[chain].NameWrapper?.address, ensConfig[chain].NameWrapper?.abi, multi)
+            const registry = getContract({address: ensConfig[chain].Registry?.address, abi: ensConfig[chain].Registry?.abi, client})
+            const nameWrapper = getContract({address: ensConfig[chain].NameWrapper?.address, abi: ensConfig[chain].NameWrapper?.abi, client})
 
             // TODO: Switch off hosted service
             let limit = PAGE_SIZE
@@ -109,14 +116,14 @@ export default function CheckSubnames({
             if (subs.length > 0) {
               const batch = []
               subs.forEach((sub) => {
-                batch.push(registry.owner(sub.id))
-                batch.push(nameWrapper.getData(sub.id))
+                batch.push(readContract(client, registry, 'owner', sub.id))
+                batch.push(readContract(client, nameWrapper, 'getData', sub.id))
                 sub.subdomains.forEach((sub) => {
-                  batch.push(registry.owner(sub.id))
-                  batch.push(nameWrapper.getData(sub.id))
+                  batch.push(readContract(client, registry, 'owner', sub.id))
+                  batch.push(readContract(client, nameWrapper, 'getData', sub.id))
                   sub.subdomains.forEach((sub) => {
-                    batch.push(registry.owner(sub.id))
-                    batch.push(nameWrapper.getData(sub.id))
+                    batch.push(readContract(client, registry, 'owner', sub.id))
+                    batch.push(readContract(client, nameWrapper, 'getData', sub.id))
                   })
                 })
               })
@@ -129,34 +136,34 @@ export default function CheckSubnames({
                 if (!sub.labelName) {
                   unknownLabels.push(sub.labelhash)
                 }
-                sub.registryOwner = getAddress(results[resultIndex.i++])
-                const wrapperData = results[resultIndex.i++]
+                sub.registryOwner = getAddress(getMulticallResult(results[resultIndex.i++], true))
+                const wrapperData = getMulticallResult(results[resultIndex.i++], true)
                 sub.wrapperData = {
-                  owner: getAddress(wrapperData.owner),
-                  fuses: wrapperData.fuses,
-                  expiry: wrapperData.expiry
+                  owner: getAddress(wrapperData[0]),
+                  fuses: BigInt(wrapperData[1]),
+                  expiry: BigInt(wrapperData[2])
                 }
                 sub.subdomains.forEach((sub) => {
                   if (!sub.labelName) {
                     unknownLabels.push(sub.labelhash)
                   }
-                  sub.registryOwner = getAddress(results[resultIndex.i++])
-                  const wrapperData = results[resultIndex.i++]
+                  sub.registryOwner = getAddress(getMulticallResult(results[resultIndex.i++], true))
+                  const wrapperData = getMulticallResult(results[resultIndex.i++], true)
                   sub.wrapperData = {
-                    owner: getAddress(wrapperData.owner),
-                    fuses: wrapperData.fuses,
-                    expiry: wrapperData.expiry
+                    owner: getAddress(wrapperData[0]),
+                    fuses: BigInt(wrapperData[1]),
+                    expiry: BigInt(wrapperData[2])
                   }
                   sub.subdomains.forEach((sub) => {
                     if (!sub.labelName) {
                       unknownLabels.push(sub.labelhash)
                     }
-                    sub.registryOwner = getAddress(results[resultIndex.i++])
-                    const wrapperData = results[resultIndex.i++]
+                    sub.registryOwner = getAddress(getMulticallResult(results[resultIndex.i++], true))
+                    const wrapperData = getMulticallResult(results[resultIndex.i++], true)
                     sub.wrapperData = {
-                      owner: getAddress(wrapperData.owner),
-                      fuses: wrapperData.fuses,
-                      expiry: wrapperData.expiry
+                      owner: getAddress(wrapperData[0]),
+                      fuses: BigInt(wrapperData[1]),
+                      expiry: BigInt(wrapperData[2])
                     }
                   })
                 })
@@ -261,8 +268,8 @@ export default function CheckSubnames({
       if (subdomain.wrapperData) {
         const nameWrapperAddress = ensConfig[chain]?.NameWrapper?.address
         const isWrapped = subdomain.registryOwner === nameWrapperAddress && isValidAddress(subdomain.wrapperData.owner)
-        const isEmancipated = isWrapped && (subdomain.wrapperData.fuses & 65536) === 65536
-        const isLocked = isWrapped && (subdomain.wrapperData.fuses & 1) === 1
+        const isEmancipated = isWrapped && (subdomain.wrapperData.fuses & 65536n) === 65536n
+        const isLocked = isWrapped && (subdomain.wrapperData.fuses & 1n) === 1n
         const expiryStr = parseExpiry(subdomain.wrapperData.expiry)
 
         if (isLocked) {
@@ -310,9 +317,9 @@ export default function CheckSubnames({
         }
 
         if (hasExpiry(subdomain.wrapperData.expiry) && subdomain.registryOwner === nameWrapperAddress) {
-          const epochMs = subdomain.wrapperData.expiry * 1000
-          const nowMs = new Date().getTime()
-          const days90Ms = 90 * 24 * 60 * 60 * 1000
+          const epochMs = subdomain.wrapperData.expiry * 1000n
+          const nowMs = BigInt(new Date().getTime())
+          const days90Ms = 90n * 24n * 60n * 60n * 1000n
 
           if (nowMs >= epochMs && subdomain.wrapperData.owner === ethers.constants.AddressZero) {
             tags.push({
@@ -387,7 +394,7 @@ export default function CheckSubnames({
     <div className={styles.containerMiddleCol}>
       <Card>
         <Heading>Subnames</Heading>
-        {!hasProvider ? (
+        {!hasClient ? (
           !isChainSupported ? (
             <Typography>No web3 provider connected.</Typography>
           ) : (
@@ -417,7 +424,7 @@ export default function CheckSubnames({
         ) : name && (
           <Typography>Skipping subname checks for invalid name.</Typography>
         )}
-        {hasProvider && isNameValid && level >= 2 && totalPages > 1 && (
+        {hasClient && isNameValid && level >= 2 && totalPages > 1 && (
           <PageButtons
             alwaysShowFirst
             alwaysShowLast

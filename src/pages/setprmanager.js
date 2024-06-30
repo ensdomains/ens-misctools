@@ -9,19 +9,20 @@ import {
   Tooltip,
   Typography
 } from '@ensdomains/thorin'
-import { useAccount, useProvider } from 'wagmi'
-import { ethers } from 'ethers'
-import { MulticallWrapper } from 'ethers-multicall-provider'
+import { useAccount, usePublicClient } from 'wagmi'
+import { getContract } from 'viem'
 import Header from '../components/header'
 import SetPublicResolverManagerModal from '../components/setprmanager-modal'
 import toast, { Toaster } from 'react-hot-toast'
-import { ensConfig } from '../lib/constants'
+import { ensConfig, AddressZero } from '../lib/constants'
 import {
   validChain,
   normalize,
   parseName,
   getAddress,
-  isValidAddress
+  isValidAddress,
+  readContract,
+  getMulticallResult
 } from '../lib/utils'
 import { useChain, useDelayedName } from '../hooks/misc'
 
@@ -48,9 +49,9 @@ export default function SetPublicResolverManager() {
   const delayedName = useDelayedName(name)
   const delayedManagerAddressOrName = useDelayedName(managerAddressOrName)
 
-  const provider = useProvider()
+  const client = usePublicClient()
   const { address } = useAccount()
-  const { chain, chains } = useChain(provider)
+  const { chain, chains } = useChain(client)
 
   const getManagerInfo = useCallback(async (name, managerAddressOrName) => {
     const managerInfo = defaultManagerInfo()
@@ -67,7 +68,7 @@ export default function SetPublicResolverManager() {
         } = normalize(managerAddressOrName)
 
         if (isManagerNameValid) {
-          const resolvedAddr = await provider.resolveName(normalizedManagerName)
+          const resolvedAddr = await client.getEnsAddress({name: normalizedManagerName})
           if (isValidAddress(resolvedAddr)) {
             managerInfo.managerAddress = resolvedAddr
             managerInfo.errorResolvingManagerAddress = false
@@ -88,45 +89,44 @@ export default function SetPublicResolverManager() {
           wrappedTokenId
         } = parseName(normalizedName)
 
-        const multi = MulticallWrapper.wrap(provider)
         const batch1 = []
 
-        const publicResolver = new ethers.Contract(ensConfig[chain].LatestPublicResolver?.address, ensConfig[chain].LatestPublicResolver?.abi, multi)
+        const publicResolver = getContract({address: ensConfig[chain].LatestPublicResolver?.address, abi: ensConfig[chain].LatestPublicResolver?.abi, client})
 
         // Check if manager is already approved for all
-        batch1.push(publicResolver.isApprovedForAll(address, managerInfo.managerAddress))
+        batch1.push(readContract(client, publicResolver, 'isApprovedForAll', address, managerInfo.managerAddress))
         
         if (!isForAllMode && isNameValid) {
           // Get registry owner/resolver for name
-          const registry = new ethers.Contract(ensConfig[chain].Registry?.address, ensConfig[chain].Registry?.abi, multi)
-          batch1.push(registry.owner(node))
-          batch1.push(registry.resolver(node))
+          const registry = getContract({address: ensConfig[chain].Registry?.address, abi: ensConfig[chain].Registry?.abi, client})
+          batch1.push(readContract(client, registry, 'owner', node))
+          batch1.push(readContract(client, registry, 'resolver', node))
 
           // Get Name Wrapper owner for name
-          const nameWrapper = new ethers.Contract(ensConfig[chain].NameWrapper?.address, ensConfig[chain].NameWrapper?.abi, multi)
-          batch1.push(nameWrapper.ownerOf(wrappedTokenId))
+          const nameWrapper = getContract({address: ensConfig[chain].NameWrapper?.address, abi: ensConfig[chain].NameWrapper?.abi, client})
+          batch1.push(readContract(client, nameWrapper, 'ownerOf', wrappedTokenId))
 
           // Check if manager is already approved
-          batch1.push(publicResolver.isApprovedFor(address, node, managerInfo.managerAddress))
+          batch1.push(readContract(client, publicResolver, 'isApprovedFor', address, node, managerInfo.managerAddress))
         }
 
         const results1 = await Promise.all(batch1)
         let results1Index = 0
 
-        managerInfo.isApprovedForAll = results1[results1Index]
+        managerInfo.isApprovedForAll = getMulticallResult(results1[results1Index], true)
         results1Index++
 
         if (!isForAllMode && isNameValid) {
-          managerInfo.registryOwner = results1[results1Index]
+          managerInfo.registryOwner = getMulticallResult(results1[results1Index], true)
           results1Index++
 
-          managerInfo.resolver = results1[results1Index]
+          managerInfo.resolver = getMulticallResult(results1[results1Index], true)
           results1Index++
 
-          managerInfo.wrappedOwner = results1[results1Index]
+          managerInfo.wrappedOwner = getMulticallResult(results1[results1Index], true)
           results1Index++
 
-          managerInfo.isApprovedFor = results1[results1Index]
+          managerInfo.isApprovedFor = getMulticallResult(results1[results1Index], true)
           results1Index++
         }
 
@@ -137,7 +137,7 @@ export default function SetPublicResolverManager() {
     }
 
     setManagerInfo(managerInfo)
-  }, [provider, address, chain, isForAllMode, setManagerInfo])
+  }, [client, address, chain, isForAllMode, setManagerInfo])
 
   useEffect(() => {
     getManagerInfo(delayedName, delayedManagerAddressOrName)
@@ -220,7 +220,7 @@ export default function SetPublicResolverManager() {
 
             if (managerInfo.successfullyRetrievedApprovalInfo) {
               if (!isForAllMode) {
-                if (!managerInfo.registryOwner || managerInfo.registryOwner === ethers.constants.AddressZero) {
+                if (!managerInfo.registryOwner || managerInfo.registryOwner === AddressZero) {
                   return toast.error('Name does not exist on-chain')
                 }
                 

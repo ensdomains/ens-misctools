@@ -1,11 +1,12 @@
 import styles from '../styles/Check.module.css'
 import { EthSVG, Heading, Typography, RecordItem, Skeleton } from '@ensdomains/thorin'
 import RecordItemRow from './recorditemrow'
-import { ensConfig } from '../lib/constants'
+import { ensConfig, AddressZero } from '../lib/constants'
 import {
   validChain,
   normalize,
   parseName,
+  readContract,
   universalResolveAddr,
   universalResolveAvatar,
   universalResolvePrimaryName,
@@ -13,6 +14,7 @@ import {
   convertToAddress,
   getAddress,
   isValidAddress,
+  getMulticallResult,
   abbreviatedValue,
   parseExpiry,
   copyToClipBoard
@@ -20,21 +22,20 @@ import {
 import useCache from '../hooks/cache'
 import { useChain } from '../hooks/misc'
 import { useState } from 'react'
-import { useProvider } from 'wagmi'
+import { usePublicClient } from 'wagmi'
 import { mainnet, goerli, sepolia } from '@wagmi/core/chains'
-import { ethers } from 'ethers'
-import { MulticallWrapper } from 'ethers-multicall-provider'
+import { getContract, decodeAbiParameters } from 'viem'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
-import Image from 'next/future/image'
+import Image from 'next/image'
 import ProgressiveImage from "react-progressive-graceful-image"
 
 export default function CheckGeneral({
   name
 }) {
   const [nameData, setNameData] = useState(defaultNameData())
-  const provider = useProvider()
-  const { chain, chains, hasProvider, isChainSupported } = useChain(provider)
+  const client = usePublicClient()
+  const { chain, chains, hasClient, isChainSupported } = useChain(client)
   const [avatarLoadingErrors, setAvatarLoadingErrors] = useState({})
   const [imageLoadingErrors, setImageLoadingErrors] = useState({})
 
@@ -57,53 +58,53 @@ export default function CheckGeneral({
         } = parseName(normalizedName)
 
         try {
-          const multi = MulticallWrapper.wrap(provider)
           const batch1 = []
 
           // Get registry owner
-          const registry = new ethers.Contract(ensConfig[chain].Registry?.address, ensConfig[chain].Registry?.abi, multi)
-          batch1.push(registry.owner(node))
-          batch1.push(registry.resolver(node))
+          const registry = getContract({address: ensConfig[chain].Registry?.address, abi: ensConfig[chain].Registry?.abi, client})
+          batch1.push(readContract(client, registry, 'owner', node))
+          batch1.push(readContract(client, registry, 'resolver', node))
 
-          const universalResolver = new ethers.Contract(ensConfig[chain].UniversalResolver?.address, ensConfig[chain].UniversalResolver?.abi, multi)
-          batch1.push(universalResolveAddr(universalResolver, normalizedName, node))
-          batch1.push(universalResolveAvatar(universalResolver, normalizedName, node))
+          const universalResolver = getContract({address: ensConfig[chain].UniversalResolver?.address, abi: ensConfig[chain].UniversalResolver?.abi, client})          
+          batch1.push(universalResolveAddr(client, universalResolver, normalizedName, node))
+          batch1.push(universalResolveAvatar(client, universalResolver, normalizedName, node))
 
           if (isETH2LD) {
             // Get registrar owner
-            const ethRegistrar = new ethers.Contract(ensConfig[chain].ETHRegistrar?.address, ensConfig[chain].ETHRegistrar?.abi, multi)
-            batch1.push(ethRegistrar.ownerOf(eth2LDTokenId).catch(e => e))
-            batch1.push(ethRegistrar.nameExpires(eth2LDTokenId))
+            const ethRegistrar = getContract({address: ensConfig[chain].ETHRegistrar?.address, abi: ensConfig[chain].ETHRegistrar?.abi, client})
+            batch1.push(readContract(client, ethRegistrar, 'ownerOf', eth2LDTokenId).catch(e => e))
+            batch1.push(readContract(client, ethRegistrar, 'nameExpires', eth2LDTokenId))
           }
 
           const nameWrapperAddress = ensConfig[chain].NameWrapper?.address
-          const nameWrapper = new ethers.Contract(nameWrapperAddress, ensConfig[chain].NameWrapper?.abi, multi)
-          batch1.push(nameWrapper.getData(wrappedTokenId))
+          const nameWrapper = getContract({address: nameWrapperAddress, abi: ensConfig[chain].NameWrapper?.abi, client})
+          batch1.push(readContract(client, nameWrapper, 'getData', wrappedTokenId))
 
-          batch1.push(universalResolveAddr(universalResolver, 'resolver.eth'))
+          batch1.push(universalResolveAddr(client, universalResolver, 'resolver.eth'))
 
           const results1 = await Promise.all(batch1)
           let results1Index = 0
 
           // Get registry owner
-          const registryOwner = results1[results1Index]
-          if (registryOwner && registryOwner !== ethers.constants.AddressZero) {
+          const registryOwner = getMulticallResult(results1[results1Index], true)
+          if (registryOwner && registryOwner !== AddressZero) {
             nameData.manager = getAddress(registryOwner)
           }
           results1Index++
 
           // Get registry resolver
-          const registryResolver = results1[results1Index]
-          if (registryResolver && registryResolver !== ethers.constants.AddressZero) {
+          const registryResolver = getMulticallResult(results1[results1Index], true)
+          if (registryResolver && registryResolver !== AddressZero) {
             nameData.registryResolver = getAddress(registryResolver)
             nameData.resolver = nameData.registryResolver
           }
           results1Index++
 
           // Get resolver and ETH address (possibly via wildcard or offchain)
-          if (results1[results1Index] && !(results1[results1Index] instanceof Error) && results1[results1Index].length > 1) {
-            nameData.ethAddress = convertToAddress(results1[results1Index][0])
-            const urResolverResult = getAddress(results1[results1Index][1])
+          const urAddrResult = getMulticallResult(results1[results1Index])
+          if (urAddrResult && !(urAddrResult instanceof Error) && urAddrResult.length > 1) {
+            nameData.ethAddress = convertToAddress(urAddrResult[0])
+            const urResolverResult = getAddress(urAddrResult[1])
             if (isValidAddress(urResolverResult)) {
               nameData.resolver = urResolverResult
             }
@@ -111,9 +112,10 @@ export default function CheckGeneral({
           results1Index++
 
           // Get avatar (possibly via wildcard or offchain)
-          if (results1[results1Index] && !(results1[results1Index] instanceof Error) && results1[results1Index].length > 0) {
+          const urAvatarResult = getMulticallResult(results1[results1Index])
+          if (urAvatarResult && !(urAvatarResult instanceof Error) && urAvatarResult.length > 0) {
             try {
-              nameData.avatar = ethers.utils.defaultAbiCoder.decode(['string'], results1[results1Index][0])[0]
+              nameData.avatar = decodeAbiParameters([{type: 'string'}], urAvatarResult[0])[0]
               if (nameData.avatar.indexOf('http://') === 0 || nameData.avatar.indexOf('https://') === 0) {
                 nameData.avatarUrl = nameData.avatar
               } else {
@@ -125,8 +127,9 @@ export default function CheckGeneral({
 
           if (isETH2LD) {
             // Get registrar owner
-            if (!(results1[results1Index] instanceof Error)) {
-              nameData.owner = getAddress(results1[results1Index])
+            const ethRegOwnerResult = getMulticallResult(results1[results1Index])
+            if (!(ethRegOwnerResult instanceof Error)) {
+              nameData.owner = getAddress(ethRegOwnerResult)
             } else {
               try {
                 // TODO: Switch off hosted service
@@ -143,7 +146,7 @@ export default function CheckGeneral({
             }
             results1Index++
 
-            nameData.expiry = results1[results1Index]
+            nameData.expiry = BigInt(getMulticallResult(results1[results1Index], true))
             results1Index++
           }
 
@@ -151,60 +154,63 @@ export default function CheckGeneral({
 
           if (nameData.isWrapped) {
             // Get wrapped data
-            const data = results1[results1Index]
-            if (data && data.owner) {
-              nameData.owner = getAddress(data.owner)
-              nameData.manager = getAddress(data.owner)
-              nameData.expiry = data.expiry
+            const data = getMulticallResult(results1[results1Index], true)
+            if (data && data[0]) {
+              nameData.owner = getAddress(data[0])
+              nameData.manager = getAddress(data[0])
+              nameData.expiry = BigInt(data[2])
             }
           }
           results1Index++
 
-          if (results1[results1Index] && !(results1[results1Index] instanceof Error) && results1[results1Index].length > 1) {
-            nameData.latestPublicResolver = convertToAddress(results1[results1Index][0])
+          const urPSResult = getMulticallResult(results1[results1Index])
+          if (urPSResult && !(urPSResult instanceof Error) && urPSResult.length > 1) {
+            nameData.latestPublicResolver = convertToAddress(urPSResult[0])
           }
 
           const batch2 = []
 
-          if (nameData.owner && nameData.owner !== ethers.constants.AddressZero) {
-            batch2.push(universalResolvePrimaryName(universalResolver, nameData.owner))
+          if (nameData.owner && nameData.owner !== AddressZero) {
+            batch2.push(universalResolvePrimaryName(client, universalResolver, nameData.owner))
           }
-          if (nameData.manager && nameData.manager !== ethers.constants.AddressZero) {
-            batch2.push(universalResolvePrimaryName(universalResolver, nameData.manager))
+          if (nameData.manager && nameData.manager !== AddressZero) {
+            batch2.push(universalResolvePrimaryName(client, universalResolver, nameData.manager))
           }
-          if (nameData.resolver && nameData.resolver !== ethers.constants.AddressZero) {
-            batch2.push(universalResolvePrimaryName(universalResolver, nameData.resolver))
+          if (nameData.resolver && nameData.resolver !== AddressZero) {
+            batch2.push(universalResolvePrimaryName(client, universalResolver, nameData.resolver))
 
             // Test if resolver is wrapper aware
             // Best guess for now is if it supports the new approval methods
-            const resolverContract = new ethers.Contract(nameData.resolver, ensConfig[chain].LatestPublicResolver?.abi, multi)
-            batch2.push(resolverContract.isApprovedForAll(ethers.constants.AddressZero, ethers.constants.AddressZero).catch(e => e))
+            const resolverContract = getContract({address: nameData.resolver, abi: ensConfig[chain].LatestPublicResolver?.abi, client})
+            batch2.push(readContract(client, resolverContract, 'isApprovedForAll', AddressZero, AddressZero).catch(e => e))
           }
-          if (nameData.ethAddress && nameData.ethAddress !== ethers.constants.AddressZero) {
-            batch2.push(universalResolvePrimaryName(universalResolver, nameData.ethAddress))
+          if (nameData.ethAddress && nameData.ethAddress !== AddressZero) {
+            batch2.push(universalResolvePrimaryName(client, universalResolver, nameData.ethAddress))
           }
 
           const results2 = await Promise.all(batch2)
           let results2Index = 0
           
-          if (nameData.owner && nameData.owner !== ethers.constants.AddressZero) {
-            nameData.ownerPrimaryName = getUniversalResolverPrimaryName(nameData.owner, results2[results2Index])
+          if (nameData.owner && nameData.owner !== AddressZero) {
+            nameData.ownerPrimaryName = getUniversalResolverPrimaryName(nameData.owner, getMulticallResult(results2[results2Index]))
             results2Index++
           }
-          if (nameData.manager && nameData.manager !== ethers.constants.AddressZero) {
-            nameData.managerPrimaryName = getUniversalResolverPrimaryName(nameData.manager, results2[results2Index])
+          if (nameData.manager && nameData.manager !== AddressZero) {
+            nameData.managerPrimaryName = getUniversalResolverPrimaryName(nameData.manager, getMulticallResult(results2[results2Index]))
             results2Index++
           }
-          if (nameData.resolver && nameData.resolver !== ethers.constants.AddressZero) {
-            nameData.resolverPrimaryName = getUniversalResolverPrimaryName(nameData.resolver, results2[results2Index])
+          if (nameData.resolver && nameData.resolver !== AddressZero) {
+            nameData.resolverPrimaryName = getUniversalResolverPrimaryName(nameData.resolver, getMulticallResult(results2[results2Index]))
             results2Index++
-            if (!(results2[results2Index] instanceof Error) && !results2[results2Index]) {
+
+            const wrapperAwareResult = getMulticallResult(results2[results2Index])
+            if (!(wrapperAwareResult instanceof Error) && !wrapperAwareResult) {
               nameData.isResolverWrapperAware = true
             }
             results2Index++
           }
-          if (nameData.ethAddress && nameData.ethAddress !== ethers.constants.AddressZero) {
-            nameData.ethAddressPrimaryName = getUniversalResolverPrimaryName(nameData.ethAddress, results2[results2Index])
+          if (nameData.ethAddress && nameData.ethAddress !== AddressZero) {
+            nameData.ethAddressPrimaryName = getUniversalResolverPrimaryName(nameData.ethAddress, getMulticallResult(results2[results2Index]))
           }
         } catch (e) {
           console.error(e)
@@ -337,7 +343,7 @@ export default function CheckGeneral({
       if (nameData.resolver) {
         let lpResolver = nameData.latestPublicResolver
         const publicResolvers = ensConfig[chain]?.publicResolvers || []
-        if ((!lpResolver || lpResolver === ethers.constants.AddressZero) && publicResolvers.length > 0) {
+        if ((!lpResolver || lpResolver === AddressZero) && publicResolvers.length > 0) {
           lpResolver = publicResolvers[0]
         }
 
@@ -369,7 +375,7 @@ export default function CheckGeneral({
               More information here: <a href="https://support.ens.domains/core/records/resolver">Resolver</a>
             </>
           })
-        } else if (nameData.resolver === ethers.constants.AddressZero) {
+        } else if (nameData.resolver === AddressZero) {
           noResolverSet = true
           resolverTags.push({
             value: 'No Resolver Set',
@@ -414,7 +420,7 @@ export default function CheckGeneral({
         }
 
         if (!nameData.manager) {
-          if (nameData.ethAddress && nameData.ethAddress !== ethers.constants.AddressZero) {
+          if (nameData.ethAddress && nameData.ethAddress !== AddressZero) {
             managerTags.push({
               value: 'Offchain Name',
               color: 'blueSecondary',
@@ -453,7 +459,7 @@ export default function CheckGeneral({
         })
       }
 
-      if (nameData.manager && (!nameData.ethAddress || nameData.ethAddress === ethers.constants.AddressZero)) {
+      if (nameData.manager && (!nameData.ethAddress || nameData.ethAddress === AddressZero)) {
         ethAddressTags.push({
           value: 'No ETH Address Set',
           color: 'yellowSecondary',
@@ -473,12 +479,12 @@ export default function CheckGeneral({
         })
       }
 
-      if (nameData.expiry && nameData.expiry > 0) {
+      if (nameData.expiry && nameData.expiry > 0n) {
         expiryStr = parseExpiry(nameData.expiry)
         
-        const epochMs = nameData.expiry * 1000
-        const nowMs = new Date().getTime()
-        const days90Ms = 90 * 24 * 60 * 60 * 1000
+        const epochMs = nameData.expiry * 1000n
+        const nowMs = BigInt(new Date().getTime())
+        const days90Ms = 90n * 24n * 60n * 60n * 1000n
 
         if (nowMs >= epochMs) {
           isNameExpired = true
@@ -490,11 +496,11 @@ export default function CheckGeneral({
             tooltip: 'This name is expired.',
             tooltipDialog: isETH2LD ? <>
               {nowMs >= graceEnd ? <>
-                The grace period for this name ended on {parseExpiry(graceEnd / 1000)}.
+                The grace period for this name ended on {parseExpiry(BigInt(Math.round(Number(graceEnd) / 1000)))}.
                 <br/><br/>
                 You can re-register the name <a href={`https://app.ens.domains/name/${name}/register`}>here</a>.
               </> : <>
-                The grace period for this name ends on {parseExpiry(graceEnd / 1000)}.
+                The grace period for this name ends on {parseExpiry(BigInt(Math.round(Number(graceEnd) / 1000)))}.
                 <br/><br/>
                 If it is not renewed, then you will lose ownership of the name.
               </>}
@@ -539,7 +545,7 @@ export default function CheckGeneral({
         <NFTLink link={links.opensea} image="/opensea.svg" alt="OpenSea"/>
         <NFTLink link={links.rarible} image="/rarible.png" alt="Rarible"/>
       </Heading>
-      {!hasProvider ? (
+      {!hasClient ? (
         !isChainSupported ? (
           <Typography>No web3 provider connected.</Typography>
         ) : (
@@ -578,7 +584,7 @@ export default function CheckGeneral({
         </table>
       )}
       <Heading>Metadata</Heading>
-      {!hasProvider ? (
+      {!hasClient ? (
         !isChainSupported ? (
           <Typography>No web3 provider connected.</Typography>
         ) : (
@@ -594,20 +600,18 @@ export default function CheckGeneral({
           </table>
           {nftMetadataLink && 
             <Link href={nftMetadataLink}>
-              <a>
-                <div>
-                  {name && imageLoadingErrors[name] === true ? (
-                    <Image src={isNameExpired ? "/name-expired.jpg" : "/error-loading-nft-image.jpg"} alt="ENS NFT Image" width="132" height="132" style={{marginLeft:'1rem'}}/>
-                  ) : (
-                    <ProgressiveImage src={nftMetadataImage} placeholder="/loading-name.png" onError={() => setImageLoadingErrors({[name]:true})}>
-                      {(src) => (
-                        /* eslint-disable-next-line @next/next/no-img-element */
-                        <img src={src} alt="ENS NFT Image" width="132" height="132" style={{marginLeft:'1rem'}}/>
-                      )}
-                    </ProgressiveImage>
-                  )}
-                </div>
-              </a>
+              <div>
+                {name && imageLoadingErrors[name] === true ? (
+                  <Image src={isNameExpired ? "/name-expired.jpg" : "/error-loading-nft-image.jpg"} alt="ENS NFT Image" width="132" height="132" style={{marginLeft:'1rem'}}/>
+                ) : (
+                  <ProgressiveImage src={nftMetadataImage} placeholder="/loading-name.png" onError={() => setImageLoadingErrors({[name]:true})}>
+                    {(src) => (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img src={src} alt="ENS NFT Image" width="132" height="132" style={{marginLeft:'1rem'}}/>
+                    )}
+                  </ProgressiveImage>
+                )}
+              </div>
             </Link>
           }
         </div>
@@ -622,12 +626,10 @@ function NFTLink({
   alt
 }) {
   return link ? (
-    <Link href={link}>
-      <a style={{display:'inline-block', marginRight:'0.5rem'}}>
-        <div>
-          <Image src={image} alt={alt} width="22" height="22"/>
-        </div>
-      </a>
+    <Link href={link} style={{display:'inline-block', marginRight:'0.5rem'}}>
+      <div>
+        <Image src={image} alt={alt} width="22" height="22"/>
+      </div>
     </Link>
   ) : <></>
 }
@@ -639,7 +641,7 @@ function defaultNameData() {
     registryResolver: '',
     resolver: '',
     ethAddress: '',
-    expiry: 0,
+    expiry: 0n,
     ownerPrimaryName: '',
     managerPrimaryName: '',
     resolverPrimaryName: '',

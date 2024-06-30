@@ -119,17 +119,17 @@ export default function Fusebox({
         <h2 className={styles.fuseheader}><u>Parent-Controlled Fuses</u></h2>
         <br/>
         {Object.keys(fuseInfo).filter(fuse => fuseInfo[fuse].parentControlled).map((fuse) => (
-          <Fuse key={fuse} name={name} fuse={fuse} burned={(fuses & Number(fuse)) === Number(fuse)} isParentControlled={true} loading={loading}/>
+          <Fuse key={fuse} name={name} fuse={fuse} burned={(Number(fuses) & Number(fuse)) === Number(fuse)} isParentControlled={true} loading={loading}/>
         ))}
-        <CustomFuses name={name} fuses={fuses} isParentControlled={true} loading={loading}/>
+        <CustomFuses name={name} fuses={Number(fuses)} isParentControlled={true} loading={loading}/>
       </div>
       <div>
         <h2 className={styles.fuseheader}><u>Owner-Controlled Fuses</u></h2>
         <br/>
         {Object.keys(fuseInfo).filter(fuse => !fuseInfo[fuse].parentControlled).map((fuse) => (
-          <Fuse key={fuse} name={name} fuse={fuse} burned={(fuses & Number(fuse)) === Number(fuse)} loading={loading}/>
+          <Fuse key={fuse} name={name} fuse={fuse} burned={(Number(fuses) & Number(fuse)) === Number(fuse)} loading={loading}/>
         ))}
-        <CustomFuses name={name} fuses={fuses} isParentControlled={false} loading={loading}/>
+        <CustomFuses name={name} fuses={Number(fuses)} isParentControlled={false} loading={loading}/>
       </div>
     </div>
   )

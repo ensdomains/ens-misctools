@@ -2,33 +2,26 @@ import '../styles/globals.css'
 import '@rainbow-me/rainbowkit/styles.css'
 import { ThemeProvider } from 'styled-components'
 import { ThorinGlobalStyles, lightTheme } from '@ensdomains/thorin'
-import { getDefaultWallets, RainbowKitProvider } from '@rainbow-me/rainbowkit'
-import { configureChains, createClient, WagmiConfig } from 'wagmi'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { RainbowKitProvider } from '@rainbow-me/rainbowkit'
+import { getDefaultConfig } from '@rainbow-me/rainbowkit'
+import { WagmiProvider, http } from 'wagmi'
 import { mainnet, goerli, sepolia } from '@wagmi/core/chains'
-import { infuraProvider } from 'wagmi/providers/infura'
-import { alchemyProvider } from 'wagmi/providers/alchemy'
-import { publicProvider } from 'wagmi/providers/public'
 import PlausibleProvider from 'next-plausible'
 
-const { chains, provider } = configureChains(
-  [mainnet, goerli, sepolia],
-  [
-    infuraProvider({ apiKey: process.env.INFURA_API_KEY }),
-    alchemyProvider({ apiKey: process.env.ALCHEMY_API_KEY }),
-    publicProvider()
-  ]
-)
-
-const { connectors } = getDefaultWallets({
+const config = getDefaultConfig({
   appName: 'ENS Tools',
-  chains,
+  projectId: '425cdecf2ed0ec72984a703069b4bac9',
+  ssr: true,
+  chains: [mainnet, goerli, sepolia],
+  transports: {
+    [mainnet.id]: http(),
+    [goerli.id]: http(),
+    [sepolia.id]: http(),
+  },
 })
 
-const wagmiClient = createClient({
-  autoConnect: true,
-  connectors,
-  provider,
-})
+const queryClient = new QueryClient()
 
 const isProdEnv = process.env.NEXT_PUBLIC_VERCEL_ENV === 'production'
 
@@ -36,17 +29,19 @@ function App({ Component, pageProps }) {
   return (
     <ThemeProvider theme={lightTheme}>
       <ThorinGlobalStyles />
-      <WagmiConfig client={wagmiClient}>
-        <RainbowKitProvider chains={chains}>
-          <PlausibleProvider
-            domain={isProdEnv ? 'tools.ens.domains' : 'ens-misctools.vercel.app'}
-            trackLocalhost={!isProdEnv}
-            trackOutboundLinks
-          >
-            <Component {...pageProps} />
-          </PlausibleProvider>
-        </RainbowKitProvider>
-      </WagmiConfig>
+      <WagmiProvider config={config}>
+        <QueryClientProvider client={queryClient}>
+          <RainbowKitProvider>
+            <PlausibleProvider
+              domain={isProdEnv ? 'tools.ens.domains' : 'ens-misctools.vercel.app'}
+              trackLocalhost={!isProdEnv}
+              trackOutboundLinks
+            >
+              <Component {...pageProps} />
+            </PlausibleProvider>
+          </RainbowKitProvider>
+        </QueryClientProvider>
+      </WagmiProvider>
     </ThemeProvider>
   )
 }

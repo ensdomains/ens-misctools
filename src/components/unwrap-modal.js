@@ -10,12 +10,13 @@ import {
 import { ensConfig } from '../lib/constants'
 import toast from 'react-hot-toast'
 import {
-  useContractWrite,
-  useNetwork,
-  useWaitForTransaction,
+  usePublicClient,
+  useWriteContract,
+  useWaitForTransactionReceipt,
 } from 'wagmi'
 import { goerli, sepolia } from '@wagmi/core/chains'
-import { normalize, parseName } from '../lib/utils'
+import { normalize, parseName, getChainName } from '../lib/utils'
+import { useChain } from '../hooks/misc'
 import { usePlausible } from 'next-plausible'
 
 export default function UnwrapModal({
@@ -25,7 +26,8 @@ export default function UnwrapModal({
   setIsOpen,
 }) {
   const plausible = usePlausible()
-  const { chain } = useNetwork()
+  const client = usePublicClient()
+  const { chain } = useChain(client)
   const [isUnwrapped, setIsUnwrapped] = useState(false)
 
   const {
@@ -41,45 +43,44 @@ export default function UnwrapModal({
   } = parseName(normalizedName)
 
   // Contract write: unwrap
-  const unwrap = useContractWrite({
-    ...ensConfig[chain?.id]?.NameWrapper,
-    functionName: isETH2LD ? 'unwrapETH2LD' : 'unwrap',
-    args: isETH2LD ? [
-      labelhash,
-      owner, // registrant
-      owner, // controller
-    ] : [
-      parentNode,
-      labelhash,
-      owner, // controller
-    ],
-    overrides: {
-      gasLimit: '150000',
-    },
-    onError: (err) => {
-      toast.error(err.message)
-    },
-  })
+  const unwrap = useWriteContract()
 
-  // Wait for unwrap to settle
-  const waitForUnwrap = useWaitForTransaction({
-    hash: unwrap?.data?.hash,
-    onSuccess: (data) => {
-      const didFail = data.status === 0
-      if (didFail) {
-        toast.error('Unwrap failed')
-      } else {
+  const unwrapWrite = () => {
+    unwrap.writeContract({
+      ...ensConfig[chain]?.NameWrapper,
+      functionName: isETH2LD ? 'unwrapETH2LD' : 'unwrap',
+      args: isETH2LD ? [
+        labelhash,
+        owner, // registrant
+        owner, // controller
+      ] : [
+        parentNode,
+        labelhash,
+        owner, // controller
+      ],
+      gas: 150000n
+    }, {
+      onSuccess: () => {
         toast.success('Your name has been unwrapped!')
         setIsUnwrapped(true)
 
         plausible('Unwrap Name', {
           props: {
             name: normalizedName,
-            network: chain.name,
+            network: getChainName(chain)
           }
         })
+      },
+      onError: (err) => {
+        console.error(err)
+        toast.error(err.shortMessage)
       }
-    },
+    })
+  }
+
+  // Wait for unwrap to settle
+  const waitForUnwrap = useWaitForTransactionReceipt({
+    hash: unwrap?.data
   })
 
   return (
@@ -117,11 +118,11 @@ export default function UnwrapModal({
             >
               Open ENS Manager
             </Button>
-          ) : unwrap.data?.hash ? (
+          ) : unwrap.data ? (
             // Link to Etherscan
             <Button
               as="a"
-              href={`https://${chain?.id === goerli.id ? 'goerli.' : chain?.id === sepolia.id ? 'sepolia.' : ''}etherscan.io/tx/${unwrap.data.hash}`}
+              href={`https://${chain === goerli.id ? 'goerli.' : chain === sepolia.id ? 'sepolia.' : ''}etherscan.io/tx/${unwrap.data}`}
               target="_blank"
               rel="noreferrer"
             >
@@ -129,7 +130,7 @@ export default function UnwrapModal({
             </Button>
           ) : (
             // Show unwrap button
-            <Button shadowless onClick={() => unwrap.write()} >
+            <Button shadowless onClick={unwrapWrite} >
               Open Wallet
             </Button>
           )
@@ -165,9 +166,9 @@ export default function UnwrapModal({
                     width: 'min-content',
                   }}
                 >
-                  {waitForUnwrap.isLoading ? (
+                  {waitForUnwrap?.isLoading ? (
                     <Spinner color="accent" />
-                  ) : waitForUnwrap.data?.status === 1 ? (
+                  ) : waitForUnwrap?.isSuccess ? (
                     // Name unwrapped successfully
                     <svg
                       width="24"

@@ -2,14 +2,22 @@ import styles from '../styles/Check.module.css'
 import { Card, Heading, Typography } from '@ensdomains/thorin'
 import RecordItemRow from './recorditemrow'
 import Fusebox from './fusebox'
-import { ensConfig } from '../lib/constants'
-import { validChain, normalize, parseName, hasExpiry, parseExpiry, getAddress } from '../lib/utils'
+import { ensConfig, AddressZero } from '../lib/constants'
+import {
+  validChain,
+  normalize,
+  parseName,
+  readContract,
+  getAddress,
+  getMulticallResult,
+  hasExpiry,
+  parseExpiry
+} from '../lib/utils'
 import useCache from '../hooks/cache'
 import { useChain } from '../hooks/misc'
 import { useState } from 'react'
-import { useProvider } from 'wagmi'
-import { ethers } from 'ethers'
-import { MulticallWrapper } from 'ethers-multicall-provider'
+import { usePublicClient } from 'wagmi'
+import { getContract } from 'viem'
 import toast from 'react-hot-toast'
 
 export default function CheckWrapper({
@@ -17,8 +25,8 @@ export default function CheckWrapper({
   updateNameInput
 }) {
   const [nameData, setNameData] = useState(defaultNameData())
-  const provider = useProvider()
-  const { chain, chains, hasProvider, isChainSupported } = useChain(provider)
+  const client = usePublicClient()
+  const { chain, chains, hasClient, isChainSupported } = useChain(client)
 
   const doUpdate = async ({name, chain}) => {
     const nameData = defaultNameData();
@@ -42,44 +50,43 @@ export default function CheckWrapper({
         } = parseName(parentName)
 
         try {
-          const multi = MulticallWrapper.wrap(provider)
           const batch = []
 
           // Get registry owners
-          const registry = new ethers.Contract(ensConfig[chain].Registry?.address, ensConfig[chain].Registry?.abi, multi)
-          batch.push(registry.owner(node))
-          batch.push(registry.owner(parentNode))
+          const registry = getContract({address: ensConfig[chain].Registry?.address, abi: ensConfig[chain].Registry?.abi, client})
+          batch.push(readContract(client, registry, 'owner', node))
+          batch.push(readContract(client, registry, 'owner', parentNode))
 
           const nameWrapperAddress = ensConfig[chain].NameWrapper?.address
 
           // Get wrapped data
-          const nameWrapper = new ethers.Contract(nameWrapperAddress, ensConfig[chain].NameWrapper?.abi, multi)
-          batch.push(nameWrapper.getData(wrappedTokenId))
-          batch.push(nameWrapper.getData(parentWrappedTokenId))
+          const nameWrapper = getContract({address: nameWrapperAddress, abi: ensConfig[chain].NameWrapper?.abi, client})
+          batch.push(readContract(client, nameWrapper, 'getData', wrappedTokenId))
+          batch.push(readContract(client, nameWrapper, 'getData', parentWrappedTokenId))
 
           const results = await Promise.all(batch)
 
           // Get registry owners
-          const registryOwner = results[0]
+          const registryOwner = getMulticallResult(results[0], true)
           nameData.registryOwner = getAddress(registryOwner)
-          const parentRegistryOwner = results[1]
+          const parentRegistryOwner = getMulticallResult(results[1], true)
           nameData.parentRegistryOwner = getAddress(parentRegistryOwner)
 
           nameData.isWrapped = registryOwner === nameWrapperAddress
           nameData.isParentWrapped = parentRegistryOwner === nameWrapperAddress
 
           // Get wrapped data
-          const data = results[2]
-          if (data && data.owner) {
-            nameData.wrappedOwner = getAddress(data.owner)
-            nameData.fuses = data.fuses
-            nameData.expiry = data.expiry
+          const data = getMulticallResult(results[2], true)
+          if (data && data[0]) {
+            nameData.wrappedOwner = getAddress(data[0])
+            nameData.fuses = BigInt(data[1])
+            nameData.expiry = BigInt(data[2])
           }
-          const parentData = results[3]
-          if (parentData && parentData.owner) {
-            nameData.parentWrappedOwner = getAddress(parentData.owner)
-            nameData.parentFuses = parentData.fuses
-            nameData.parentExpiry = parentData.expiry
+          const parentData = getMulticallResult(results[3], true)
+          if (parentData && parentData[0]) {
+            nameData.parentWrappedOwner = getAddress(parentData[0])
+            nameData.parentFuses = BigInt(parentData[1])
+            nameData.parentExpiry = BigInt(parentData[2])
           }
         } catch (e) {
           console.error(e)
@@ -157,9 +164,9 @@ export default function CheckWrapper({
           color: 'blueSecondary',
           tooltip: 'The root node is Locked as a special case in the Name Wrapper.'
         })
-      } else if (wrappedOwner === ethers.constants.AddressZero) {
+      } else if (wrappedOwner === AddressZero) {
         const nameWrapperAddress = ensConfig[chain].NameWrapper?.address
-        if (registryOwner === ethers.constants.AddressZero || registryOwner === nameWrapperAddress) {
+        if (registryOwner === AddressZero || registryOwner === nameWrapperAddress) {
           if (registryOwner === nameWrapperAddress) {
             stateTags.push({
               value: 'Unregistered / Expired',
@@ -190,7 +197,7 @@ export default function CheckWrapper({
             tooltip: 'This name is not currently wrapped.'
           })
         }
-      } else if ((fuses & 1) === 1) {
+      } else if ((fuses & 1n) === 1n) {
         stateTags.push({
           value: 'Locked',
           color: 'blueSecondary',
@@ -211,7 +218,7 @@ export default function CheckWrapper({
             </>}
           </> : ''
         })
-      } else if ((fuses & 65536) === 65536) {
+      } else if ((fuses & 65536n) === 65536n) {
         stateTags.push({
           value: 'Emancipated',
           color: 'blueSecondary',
@@ -254,9 +261,9 @@ export default function CheckWrapper({
     setStateInfo(parentName, parentStateTags, true, nameData.parentRegistryOwner, nameData.parentWrappedOwner, nameData.parentFuses, nameData.parentExpiry)
 
     if (hasExpiry(nameData.parentExpiry)) {
-      const epochMs = nameData.parentExpiry * 1000
-      const nowMs = new Date().getTime()
-      const days90Ms = 90 * 24 * 60 * 60 * 1000
+      const epochMs = nameData.parentExpiry * 1000n
+      const nowMs = BigInt(new Date().getTime())
+      const days90Ms = 90n * 24n * 60n * 60n * 1000n
 
       if (nowMs >= epochMs) {
         parentExpiryTags.push({
@@ -287,7 +294,7 @@ export default function CheckWrapper({
     <div className={styles.containerMiddleCol}>
       <Card>
         <Heading>Name Wrapper</Heading>
-        {!hasProvider ? (
+        {!hasClient ? (
           !isChainSupported ? (
             <Typography>No web3 provider connected.</Typography>
           ) : (
@@ -313,12 +320,12 @@ function defaultNameData() {
     registryOwner: '',
     wrappedOwner: '',
     isWrapped: false,
-    fuses: 0,
-    expiry: 0,
+    fuses: 0n,
+    expiry: 0n,
     parentRegistryOwner: '',
     parentWrappedOwner: '',
     isParentWrapped: false,
-    parentFuses: 0,
-    parentExpiry: 0
+    parentFuses: 0n,
+    parentExpiry: 0n
   }
 }

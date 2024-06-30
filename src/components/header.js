@@ -1,14 +1,14 @@
 import Link from 'next/link'
 import { Heading, Tag, AlertSVG, EthSVG } from '@ensdomains/thorin'
 import ConnectButtonWrapper from '../components/connect-button'
-import { useProvider } from 'wagmi'
+import { usePublicClient } from 'wagmi'
 import { mainnet, goerli, sepolia } from '@wagmi/core/chains'
 import { useChain } from '../hooks/misc'
 import { useState, useEffect } from 'react'
 
 export default function Header({ position }) {
-  const provider = useProvider()
-  const { chain } = useChain(provider)
+  const client = usePublicClient()
+  const { chain } = useChain(client)
   const [tagInfo, setTagInfo] = useState({})
   const [topLinkDisabled, setTopLinkDisabled] = useState(false)
 
@@ -48,12 +48,10 @@ export default function Header({ position }) {
 
   return (
     <header className={['header', [position && `header--${position}`]].join(' ')}>
-      <Link href={topLinkDisabled ? '#' : '/'}>
-        <a style={topLinkDisabled ? {cursor:'default'} : {}}>
-          <Heading as="span" level="2" className="header__name">
-            ENS Tools
-          </Heading>
-        </a>
+      <Link href={topLinkDisabled ? '#' : '/'} style={topLinkDisabled ? {cursor:'default'} : {}}>
+        <Heading as="span" level="2" className="header__name">
+          ENS Tools
+        </Heading>
       </Link>
       <div style={{display:'flex', flexDirection:'row', alignItems:'center'}}>
         {tagInfo?.tagValue ? <Tag colorStyle={tagInfo.tagColor} size="medium" style={{height:'min-content', marginRight:'1rem'}}>{tagInfo.tagIcon}{tagInfo.tagValue}</Tag> : <></>}

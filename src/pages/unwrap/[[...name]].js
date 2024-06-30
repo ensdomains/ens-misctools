@@ -2,13 +2,13 @@ import styles from '../../styles/Unwrap.module.css'
 import Head from 'next/head'
 import { useState } from 'react'
 import { Button, Heading, Input } from '@ensdomains/thorin'
-import { useAccount, useProvider } from 'wagmi'
-import { ethers } from 'ethers'
+import { useAccount, usePublicClient } from 'wagmi'
+import { getContract } from 'viem'
 import Header from '../../components/header'
 import UnwrapModal from '../../components/unwrap-modal'
 import toast, { Toaster } from 'react-hot-toast'
-import { ensConfig } from '../../lib/constants'
-import { validChain, normalize, parseName } from '../../lib/utils'
+import { ensConfig, AddressZero } from '../../lib/constants'
+import { validChain, normalize, parseName, readContract } from '../../lib/utils'
 import { useChain, useDelayedName, useRouterPush, useRouterUpdate } from '../../hooks/misc'
 
 export default function Unwrap() {
@@ -20,9 +20,9 @@ export default function Unwrap() {
   const onNameChange = useRouterPush('/unwrap/', setName)
   useRouterUpdate('/unwrap/', name, onNameChange)
 
-  const provider = useProvider()
+  const client = usePublicClient()
   const { address } = useAccount()
-  const { chain, chains } = useChain(provider)
+  const { chain, chains } = useChain(client)
 
   return (
     <>
@@ -90,33 +90,33 @@ export default function Unwrap() {
             }
 
             // Get registry owner
-            const registry = new ethers.Contract(ensConfig[chain].Registry?.address, ensConfig[chain].Registry?.abi, provider)
-            const registryOwner = await registry.owner(node)
+            const registry = getContract({address: ensConfig[chain].Registry?.address, abi: ensConfig[chain].Registry?.abi, client})
+            const registryOwner = await readContract(client, registry, 'owner', node)
             if (!registryOwner) {
               return toast.error('Unable to retrieve registry data')
-            } else if (registryOwner === ethers.constants.AddressZero) {
+            } else if (registryOwner === AddressZero) {
               return toast.error('Name does not exist in ENS registry or has been deleted')
             }
 
             // Get wrapped data
             const nameWrapperAddress = ensConfig[chain].NameWrapper?.address
-            const nameWrapper = new ethers.Contract(nameWrapperAddress, ensConfig[chain].NameWrapper?.abi, provider)
-            const data = await nameWrapper.getData(wrappedTokenId)
+            const nameWrapper = getContract({address: nameWrapperAddress, abi: ensConfig[chain].NameWrapper?.abi, client})
+            const data = await readContract(client, nameWrapper, 'getData', wrappedTokenId)
             if (!data) {
               return toast.error('Unable to retrieve wrapper data')
-            } else if (!data.owner || data.owner === ethers.constants.AddressZero) {
+            } else if (!data[0] || data[0] === AddressZero) {
               if (registryOwner === nameWrapperAddress) {
                 return toast.error('Name has expired')
               } else {
                 return toast.error('Name is not currently wrapped')
               }
-            } else if (data.owner !== address) {
+            } else if (data[0] !== address) {
               return toast.error('You are not the owner of this wrapped name')
-            } else if ((data.fuses & 1) === 1) {
+            } else if ((BigInt(data[1]) & 1n) === 1n) {
               return toast.error('Permission to unwrap name has been revoked')
             }
 
-            setOwner(data.owner)
+            setOwner(data[0])
             setDialogOpen(true)
           }}
         >

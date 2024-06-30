@@ -9,12 +9,13 @@ import StepDot from './stepdot'
 import { ensConfig } from '../lib/constants'
 import toast from 'react-hot-toast'
 import {
-  useContractWrite,
-  useNetwork,
-  useWaitForTransaction,
+  usePublicClient,
+  useWriteContract,
+  useWaitForTransactionReceipt,
 } from 'wagmi'
 import { goerli, sepolia } from '@wagmi/core/chains'
-import { normalize, parseName, isValidAddress } from '../lib/utils'
+import { normalize, parseName, isValidAddress, getChainName } from '../lib/utils'
+import { useChain } from '../hooks/misc'
 import { usePlausible } from 'next-plausible'
 
 export default function SetPublicResolverManagerModal({
@@ -26,7 +27,8 @@ export default function SetPublicResolverManagerModal({
   setIsOpen,
 }) {
   const plausible = usePlausible()
-  const { chain } = useNetwork()
+  const client = usePublicClient()
+  const { chain } = useChain(client)
   const [isManagerSet, setIsManagerSet] = useState(false)
 
   const {
@@ -40,34 +42,23 @@ export default function SetPublicResolverManagerModal({
   } = parseName(normalizedName)
 
   // Contract write: approve / setApprovalForAll
-  const approveTx = useContractWrite({
-    ...ensConfig[chain?.id]?.LatestPublicResolver,
-    functionName: isForAllMode ? 'setApprovalForAll' : 'approve',
-    args: isForAllMode ? [
-      addr,
-      approve
-    ] : [
-      node,
-      addr,
-      approve
-    ],
-    overrides: {
-      gasLimit: '60000',
-    },
-    onError: (err) => {
-      console.error(err)
-      toast.error(err.message)
-    },
-  })
+  const approveTx = useWriteContract()
 
-  // Wait for approveTx to settle
-  const waitForApproveTx = useWaitForTransaction({
-    hash: approveTx?.data?.hash,
-    onSuccess: (data) => {
-      const didFail = data.status === 0
-      if (didFail) {
-        toast.error('Set manager failed')
-      } else {
+  const approveTxWrite = () => {
+    approveTx.writeContract({
+      ...ensConfig[chain]?.LatestPublicResolver,
+      functionName: isForAllMode ? 'setApprovalForAll' : 'approve',
+      args: isForAllMode ? [
+        addr,
+        approve
+      ] : [
+        node,
+        addr,
+        approve
+      ],
+      gas: 60000n
+    }, {
+      onSuccess: () => {
         if (approve) {
           toast.success(`You have successfully approved a new manager!`)
         } else {
@@ -79,11 +70,20 @@ export default function SetPublicResolverManagerModal({
           props: {
             name: normalizedName,
             forAll: isForAllMode,
-            network: chain.name
+            network: getChainName(chain)
           }
         })
+      },
+      onError: (err) => {
+        console.error(err)
+        toast.error(err.shortMessage)
       }
-    },
+    })
+  }
+
+  // Wait for approveTx to settle
+  const waitForApproveTx = useWaitForTransactionReceipt({
+    hash: approveTx?.data
   })
 
   const dismiss = () => {
@@ -133,11 +133,11 @@ export default function SetPublicResolverManagerModal({
             <Button onClick={() => window.location.reload()}>
               Done
             </Button>
-          ) : approveTx.data?.hash ? (
+          ) : approveTx.data ? (
             // Link to Etherscan
             <Button
               as="a"
-              href={`https://${chain?.id === goerli.id ? 'goerli.' : chain?.id === sepolia.id ? 'sepolia.' : ''}etherscan.io/tx/${approveTx.data?.hash}`}
+              href={`https://${chain === goerli.id ? 'goerli.' : chain === sepolia.id ? 'sepolia.' : ''}etherscan.io/tx/${approveTx.data}`}
               target="_blank"
               rel="noreferrer"
             >
@@ -145,7 +145,7 @@ export default function SetPublicResolverManagerModal({
             </Button>
           ) : (
             // Show open wallet button
-            <Button shadowless onClick={() => approveTx.write()} >
+            <Button shadowless onClick={approveTxWrite} >
               Open Wallet
             </Button>
           )
@@ -185,8 +185,8 @@ export default function SetPublicResolverManagerModal({
                 label={`${approve ? 'Approve' : 'Revoke'} Manager`}
                 loading={!approveTx.data}
                 spinner={waitForApproveTx.isLoading}
-                success={waitForApproveTx.data?.status === 1}
-                error={waitForApproveTx.data?.status !== 1}
+                success={waitForApproveTx.isSuccess}
+                error={waitForApproveTx.isError}
               />
             </ul>
           </Typography>
