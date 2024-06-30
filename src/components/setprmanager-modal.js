@@ -13,7 +13,7 @@ import {
   useWriteContract,
   useWaitForTransactionReceipt,
 } from 'wagmi'
-import { goerli, sepolia } from '@wagmi/core/chains'
+import { mainnet } from '@wagmi/core/chains'
 import { normalize, parseName, isValidAddress, getChainName } from '../lib/utils'
 import { useChain } from '../hooks/misc'
 import { usePlausible } from 'next-plausible'
@@ -137,7 +137,7 @@ export default function SetPublicResolverManagerModal({
             // Link to Etherscan
             <Button
               as="a"
-              href={`https://${chain === goerli.id ? 'goerli.' : chain === sepolia.id ? 'sepolia.' : ''}etherscan.io/tx/${approveTx.data}`}
+              href={`https://${chain === mainnet.id ? '' : getChainName(chain) + '.'}etherscan.io/tx/${approveTx.data}`}
               target="_blank"
               rel="noreferrer"
             >

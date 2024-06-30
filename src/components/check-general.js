@@ -17,13 +17,14 @@ import {
   getMulticallResult,
   abbreviatedValue,
   parseExpiry,
-  copyToClipBoard
+  copyToClipBoard,
+  getChainName
 } from '../lib/utils'
 import useCache from '../hooks/cache'
 import { useChain } from '../hooks/misc'
 import { useState } from 'react'
 import { usePublicClient } from 'wagmi'
-import { mainnet, goerli, sepolia } from '@wagmi/core/chains'
+import { mainnet, goerli, sepolia, holesky } from '@wagmi/core/chains'
 import { getContract, decodeAbiParameters } from 'viem'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
@@ -119,7 +120,7 @@ export default function CheckGeneral({
               if (nameData.avatar.indexOf('http://') === 0 || nameData.avatar.indexOf('https://') === 0) {
                 nameData.avatarUrl = nameData.avatar
               } else {
-                nameData.avatarUrl = `https://metadata.ens.domains/${chain === goerli.id ? 'goerli' : chain === sepolia.id ? 'sepolia' : 'mainnet'}/avatar/${normalizedName}`
+                nameData.avatarUrl = `https://metadata.ens.domains/${getChainName(chain)}/avatar/${normalizedName}`
               }
             } catch (e) {}
           }
@@ -327,6 +328,13 @@ export default function CheckGeneral({
 
             nftMetadataLink = `https://metadata.ens.domains/sepolia/${contractAddr}/${tokenId}`
             nftMetadataImage = `https://metadata.ens.domains/sepolia/${contractAddr}/${tokenId}/image`
+          }
+        } else if (chain === holesky.id) {
+          if (nameData.manager) {
+            links.etherscan = `https://holesky.etherscan.io/nft/${contractAddr}/${tokenId}`
+
+            nftMetadataLink = `https://metadata.ens.domains/holesky/${contractAddr}/${tokenId}`
+            nftMetadataImage = `https://metadata.ens.domains/holesky/${contractAddr}/${tokenId}/image`
           }
         }
       }

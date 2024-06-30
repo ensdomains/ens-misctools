@@ -13,7 +13,6 @@ import {
   Banner
 } from '@ensdomains/thorin'
 import { usePublicClient, useAccount } from 'wagmi'
-import { goerli, sepolia } from '@wagmi/core/chains'
 import { getContract } from 'viem'
 import Header from '../../components/header'
 import SetRecordsModal from '../../components/setrecords-modal'

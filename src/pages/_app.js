@@ -6,18 +6,19 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { RainbowKitProvider } from '@rainbow-me/rainbowkit'
 import { getDefaultConfig } from '@rainbow-me/rainbowkit'
 import { WagmiProvider, http } from 'wagmi'
-import { mainnet, goerli, sepolia } from '@wagmi/core/chains'
+import { mainnet, goerli, sepolia, holesky } from '@wagmi/core/chains'
 import PlausibleProvider from 'next-plausible'
 
 const config = getDefaultConfig({
   appName: 'ENS Tools',
   projectId: '425cdecf2ed0ec72984a703069b4bac9',
   ssr: true,
-  chains: [mainnet, goerli, sepolia],
+  chains: [mainnet, goerli, sepolia, holesky],
   transports: {
     [mainnet.id]: http(),
     [goerli.id]: http(),
     [sepolia.id]: http(),
+    [holesky.id]: http(),
   },
 })
 

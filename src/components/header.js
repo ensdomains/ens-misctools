@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { Heading, Tag, AlertSVG, EthSVG } from '@ensdomains/thorin'
 import ConnectButtonWrapper from '../components/connect-button'
 import { usePublicClient } from 'wagmi'
-import { mainnet, goerli, sepolia } from '@wagmi/core/chains'
+import { mainnet, goerli, sepolia, holesky } from '@wagmi/core/chains'
 import { useChain } from '../hooks/misc'
 import { useState, useEffect } from 'react'
 
@@ -29,6 +29,10 @@ export default function Header({ position }) {
       tagColor = 'purplePrimary'
       tagIcon = <EthSVG/>
       tagValue = 'Sepolia'
+    } else if (chain === holesky.id) {
+      tagColor = 'bluePrimary'
+      tagIcon = <EthSVG/>
+      tagValue = 'Holesky'
     } else if (chain === 0) {
       tagValue = 'No Network'
     }

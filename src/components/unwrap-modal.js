@@ -14,7 +14,7 @@ import {
   useWriteContract,
   useWaitForTransactionReceipt,
 } from 'wagmi'
-import { goerli, sepolia } from '@wagmi/core/chains'
+import { mainnet } from '@wagmi/core/chains'
 import { normalize, parseName, getChainName } from '../lib/utils'
 import { useChain } from '../hooks/misc'
 import { usePlausible } from 'next-plausible'
@@ -122,7 +122,7 @@ export default function UnwrapModal({
             // Link to Etherscan
             <Button
               as="a"
-              href={`https://${chain === goerli.id ? 'goerli.' : chain === sepolia.id ? 'sepolia.' : ''}etherscan.io/tx/${unwrap.data}`}
+              href={`https://${chain === mainnet.id ? '' : getChainName(chain) + '.'}etherscan.io/tx/${unwrap.data}`}
               target="_blank"
               rel="noreferrer"
             >

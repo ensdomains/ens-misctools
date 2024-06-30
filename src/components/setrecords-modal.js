@@ -13,7 +13,7 @@ import {
   useWriteContract,
   useWaitForTransactionReceipt,
 } from 'wagmi'
-import { goerli, sepolia } from '@wagmi/core/chains'
+import { mainnet } from '@wagmi/core/chains'
 import { encodeAbiParameters } from 'viem'
 import {
   normalize,
@@ -177,7 +177,7 @@ export default function SetRecordsModal({
             // Link to Etherscan
             <Button
               as="a"
-              href={`https://${chain === goerli.id ? 'goerli.' : chain === sepolia.id ? 'sepolia.' : ''}etherscan.io/tx/${writeTx.data}`}
+              href={`https://${chain === mainnet.id ? '' : getChainName(chain) + '.'}etherscan.io/tx/${writeTx.data}`}
               target="_blank"
               rel="noreferrer"
             >

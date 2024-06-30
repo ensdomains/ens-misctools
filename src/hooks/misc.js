@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/router'
 import { useChainId, useChains, useConnections, useDisconnect, useSwitchChain } from 'wagmi'
-import { mainnet, goerli, sepolia } from '@wagmi/core/chains'
+import { mainnet, goerli, sepolia, holesky } from '@wagmi/core/chains'
 import { validChain } from '../lib/utils'
 
-const defaultChains = [mainnet, goerli, sepolia]
+const defaultChains = [mainnet, goerli, sepolia, holesky]
 
 export function useChain(client) {
   const [hasClient, setHasClient] = useState(false)

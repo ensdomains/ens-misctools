@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
 import { usePublicClient, useAccount } from 'wagmi'
-import { mainnet, goerli, sepolia } from '@wagmi/core/chains'
 import { Button, Profile } from '@ensdomains/thorin'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import {
@@ -9,7 +8,8 @@ import {
   universalResolveAvatar,
   universalResolvePrimaryName,
   getUniversalResolverPrimaryName,
-  copyToClipBoard
+  copyToClipBoard,
+  getChainName
 } from '../lib/utils'
 import { ensConfig } from '../lib/constants'
 import { useDisconnectToMainnet, useChain } from '../hooks/misc'
@@ -57,7 +57,7 @@ export default function ConnectButtonWrapper({
                 if (avatarInfo.indexOf('http://') === 0 || avatarInfo.indexOf('https://') === 0) {
                   avatar = avatarInfo
                 } else {
-                  avatar = `https://metadata.ens.domains/${chain === goerli.id ? 'goerli' : chain === sepolia.id ? 'sepolia' : 'mainnet'}/avatar/${normalizedName}`
+                  avatar = `https://metadata.ens.domains/${getChainName(chain)}/avatar/${normalizedName}`
                 }
               }
             } catch (e) {}

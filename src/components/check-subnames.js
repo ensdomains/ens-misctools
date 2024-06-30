@@ -1,7 +1,7 @@
 import styles from '../styles/Check.module.css'
 import { Card, Heading, Typography, PageButtons } from '@ensdomains/thorin'
 import RecordItemRow from './recorditemrow'
-import { ensConfig } from '../lib/constants'
+import { ensConfig, AddressZero } from '../lib/constants'
 import {
   validChain,
   normalize,
@@ -321,7 +321,7 @@ export default function CheckSubnames({
           const nowMs = BigInt(new Date().getTime())
           const days90Ms = 90n * 24n * 60n * 60n * 1000n
 
-          if (nowMs >= epochMs && subdomain.wrapperData.owner === ethers.constants.AddressZero) {
+          if (nowMs >= epochMs && subdomain.wrapperData.owner === AddressZero) {
             tags.push({
               value: 'Expired',
               color: 'redSecondary',

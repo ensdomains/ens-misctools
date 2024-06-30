@@ -1,4 +1,4 @@
-import { mainnet, goerli, sepolia } from '@wagmi/core/chains'
+import { mainnet, goerli, sepolia, holesky } from '@wagmi/core/chains'
 
 const registryABI = require('./ens-registry-abi.json')
 const ethRegistrarABI = require('./ens-eth-registrar-abi.json')
@@ -104,6 +104,36 @@ export const ensConfig = {
       abi: universalResolverABI
     },
     subgraphURL: 'https://api.studio.thegraph.com/query/49574/enssepolia/version/latest',
+  },
+  [holesky.id]: {
+    Registry: {
+      address: '0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e',
+      abi: registryABI,
+    },
+    ETHRegistrar: {
+      address: '0x57f1887a8BF19b14fC0dF6Fd9B2acc9Af147eA85',
+      abi: ethRegistrarABI,
+    },
+    NameWrapper: {
+      address: '0xab50971078225D365994dc1Edcb9b7FD72Bb4862',
+      abi: nameWrapperABI,
+    },
+    ReverseRegistrar: {
+      address: '0x132AC0B116a73add4225029D1951A9A707Ef673f',
+      abi: reverseRegistrarABI,
+    },
+    publicResolvers: [
+      '0x9010A27463717360cAD99CEA8bD39b8705CCA238'
+    ],
+    LatestPublicResolver: {
+      address: '0x9010A27463717360cAD99CEA8bD39b8705CCA238',
+      abi: latestPublicResolverABI,
+    },
+    UniversalResolver: {
+      address: '0xa6ac935d4971e3cd133b950ae053becd16fe7f3b',
+      abi: universalResolverABI
+    },
+    subgraphURL: 'https://api.studio.thegraph.com/query/49574/ensholesky/version/latest',
   },
 }
 
