@@ -53,7 +53,7 @@ export default function Home() {
         </Card>
          <Card>
           <Link href="/dnsquery">
-              <div><Image src="/sharing-setprimary.png" alt="DNSSEC Query" width="350" height="175" priority/></div>
+              <div><Image src="/sharing-dnssec.png" alt="DNSSEC Query" width="350" height="175" priority/></div>
           </Link>
           <Typography>Query your DNS name to test if DNNSEC support works properly.</Typography>
         </Card>
