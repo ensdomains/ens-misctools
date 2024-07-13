@@ -17,7 +17,7 @@
     "big-integer": "^1.6.51",
     "buffer": "^6.0.3",
     "dns-packet": "^5.5.0",
-    "dnssec-debugger-exp": "^0.0.1",
+    "dnssec-debugger-exp": "^0.0.2",
     "ethers": "5.7.2",
     "ethers-multicall-provider": "^3.0.0",
     "graphql": "^16.6.0",
