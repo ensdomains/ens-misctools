@@ -9,13 +9,12 @@ import {
   Typography,
   Dialog
 } from '@ensdomains/thorin'
-import { useAccount, useProvider } from 'wagmi'
-import { ethers } from 'ethers'
-import { MulticallWrapper } from 'ethers-multicall-provider'
+import { useAccount, usePublicClient } from 'wagmi'
+import { getContract } from 'viem'
 import Header from '../../components/header'
 import SetPrimaryModal from '../../components/setprimary-modal'
 import toast, { Toaster } from 'react-hot-toast'
-import { ensConfig } from '../../lib/constants'
+import { ensConfig, AddressZero } from '../../lib/constants'
 import {
   validChain,
   normalize,
@@ -26,7 +25,9 @@ import {
   universalResolveAddr,
   convertToAddress,
   getAddress,
-  isValidAddress
+  isValidAddress,
+  readContract,
+  getMulticallResult
 } from '../../lib/utils'
 import { useChain, useRouterPush, useRouterUpdate, useDelayedName } from '../../hooks/misc'
 
@@ -42,9 +43,9 @@ export default function SetPrimary() {
   const onNameChange = useRouterPush('/setprimary/', setNameOrAddress)
   useRouterUpdate('/setprimary/', nameOrAddress, onNameChange)
 
-  const provider = useProvider()
+  const client = usePublicClient()
   const { address } = useAccount()
-  const { chain, chains } = useChain(provider)
+  const { chain, chains } = useChain(client)
 
   const defaultNameData = function() {
     return {
@@ -81,8 +82,8 @@ export default function SetPrimary() {
           if (isNameValid) {
             nameData.name = normalizedName
 
-            const universalResolver = new ethers.Contract(ensConfig[chain].UniversalResolver?.address, ensConfig[chain].UniversalResolver?.abi, provider)
-            const addrResult = await universalResolveAddr(universalResolver, normalizedName, parseName(normalizedName).node)
+            const universalResolver = getContract({address: ensConfig[chain].UniversalResolver?.address, abi: ensConfig[chain].UniversalResolver?.abi, client})
+            const addrResult = await universalResolveAddr(client, universalResolver, normalizedName, parseName(normalizedName).node)
             if (addrResult && !(addrResult instanceof Error) && addrResult.length > 0) {
               const resolvedAddr = convertToAddress(addrResult[0])
               if (isValidAddress(resolvedAddr)) {
@@ -98,59 +99,60 @@ export default function SetPrimary() {
 
       if (nameData.address) {
         try {
-          const multi = MulticallWrapper.wrap(provider)
           const batch1 = []
 
-          const universalResolver = new ethers.Contract(ensConfig[chain].UniversalResolver?.address, ensConfig[chain].UniversalResolver?.abi, multi)
+          const universalResolver = getContract({address: ensConfig[chain].UniversalResolver?.address, abi: ensConfig[chain].UniversalResolver?.abi, client})
 
           // Resolve current Primary Name
-          batch1.push(universalResolvePrimaryName(universalResolver, nameData.address))
+          batch1.push(universalResolvePrimaryName(client, universalResolver, nameData.address))
 
           let contractIsOwnable = false
 
           // Get default reverse resolver
-          const reverseRegistrar = new ethers.Contract(ensConfig[chain].ReverseRegistrar?.address, ensConfig[chain].ReverseRegistrar?.abi, multi)
-          batch1.push(reverseRegistrar.defaultResolver())
+          const reverseRegistrar = getContract({address: ensConfig[chain].ReverseRegistrar?.address, abi: ensConfig[chain].ReverseRegistrar?.abi, client})
+          batch1.push(readContract(client, reverseRegistrar, 'defaultResolver'))
 
           // Check if address is contract
-          batch1.push(multi.getCode(nameData.address))
+          batch1.push(client.getBytecode({address: nameData.address}))
 
           // Check if connected address is owner of reverse record
           const reverseNode = namehash(nameData.address.toLowerCase().substring(2) + '.addr.reverse')
-          const registry = new ethers.Contract(ensConfig[chain].Registry?.address, ensConfig[chain].Registry?.abi, provider)
-          batch1.push(registry.owner(reverseNode))
+          const registry = getContract({address: ensConfig[chain].Registry?.address, abi: ensConfig[chain].Registry?.abi, client})
+          batch1.push(readContract(client, registry, 'owner', reverseNode))
 
           // Get current resolver of reverse record
-          batch1.push(registry.resolver(reverseNode))
+          batch1.push(readContract(client, registry, 'resolver', reverseNode))
 
           // Check if address is Ownable owner for contract
           try {
-            const targetContract = new ethers.Contract(nameData.address, ['function owner() public view returns (address)'], multi)
-            batch1.push(targetContract['owner()']().catch(e => e))
+            const targetContract = getContract({address: nameData.address, abi: ['function owner() public view returns (address)'], client})
+            batch1.push(readContract(client, targetContract, 'owner').catch(e => e))
             contractIsOwnable = true
           } catch (e) {}
 
           const results1 = await Promise.all(batch1)
           let results1Index = 0
 
-          nameData.currentPrimaryName = getUniversalResolverPrimaryName(nameData.address, results1[results1Index])
+          nameData.currentPrimaryName = getUniversalResolverPrimaryName(nameData.address, getMulticallResult(results1[results1Index]))
           results1Index++
 
-          nameData.defaultReverseResolver = getAddress(results1[results1Index])
+          nameData.defaultReverseResolver = getAddress(getMulticallResult(results1[results1Index], true))
           results1Index++
 
-          nameData.isContract = results1[results1Index] && results1[results1Index] !== '0x'
+          const isContractResult = results1[results1Index]
+          nameData.isContract = isContractResult && isContractResult !== '0x'
           results1Index++
 
-          nameData.reverseRecordOwner =  getAddress(results1[results1Index])
+          nameData.reverseRecordOwner =  getAddress(getMulticallResult(results1[results1Index], true))
           results1Index++
 
-          nameData.reverseRecordResolver = getAddress(results1[results1Index])
+          nameData.reverseRecordResolver = getAddress(getMulticallResult(results1[results1Index], true))
           results1Index++
 
           if (contractIsOwnable) {
-            if (results1[results1Index] && !(results1[results1Index] instanceof Error)) {
-              nameData.contractOwner = getAddress(results1[results1Index])
+            const contractIsOwnableResult = getMulticallResult(results1[results1Index])
+            if (contractIsOwnableResult && !(contractIsOwnableResult instanceof Error)) {
+              nameData.contractOwner = getAddress(contractIsOwnableResult)
             }
             results1Index++
           }
@@ -163,7 +165,7 @@ export default function SetPrimary() {
     }
 
     setNameData(nameData)
-  }, [setNameData, provider, chain, chains])
+  }, [setNameData, client, chain, chains])
 
   useEffect(() => {
     getNameData(delayedNameOrAddress)
@@ -249,7 +251,7 @@ export default function SetPrimary() {
 
             let isPrimaryNameAlreadyTheSame = false
             if (isClearName) {
-              if (nameData.currentPrimaryName === '' || nameData.currentPrimaryName === ethers.constants.AddressZero) {
+              if (nameData.currentPrimaryName === '' || nameData.currentPrimaryName === AddressZero) {
                 isPrimaryNameAlreadyTheSame = true
               }
             } else {
@@ -277,8 +279,8 @@ export default function SetPrimary() {
               // Check if connected address is ENS Registry operator for contract
               let approvedRegistryOperator = false
               try {
-                const registry = new ethers.Contract(ensConfig[chain].Registry?.address, ensConfig[chain].Registry?.abi, provider)
-                approvedRegistryOperator = await registry.isApprovedForAll(nameData.address, address)
+                const registry = getContract({address: ensConfig[chain].Registry?.address, abi: ensConfig[chain].Registry?.abi, client})
+                approvedRegistryOperator = await readContract(client, registry, 'isApprovedForAll', nameData.address, address)
               } catch(e) {
                 console.error(e)
               }

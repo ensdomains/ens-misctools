@@ -6,15 +6,15 @@ import {
   Typography,
 } from '@ensdomains/thorin'
 import StepDot from './stepdot'
-import { ensConfig } from '../lib/constants'
+import { ensConfig, AddressZero } from '../lib/constants'
 import toast from 'react-hot-toast'
 import {
-  useContractWrite,
-  useNetwork,
-  useWaitForTransaction,
+  usePublicClient,
+  useWriteContract,
+  useWaitForTransactionReceipt,
 } from 'wagmi'
-import { goerli, sepolia } from '@wagmi/core/chains'
-import { normalize, namehash, isValidAddress } from '../lib/utils'
+import { normalize, namehash, isValidAddress, getChainName } from '../lib/utils'
+import { useChain } from '../hooks/misc'
 import { usePlausible } from 'next-plausible'
 
 export default function SetPrimaryModal({
@@ -29,7 +29,8 @@ export default function SetPrimaryModal({
   setIsOpen,
 }) {
   const plausible = usePlausible()
-  const { chain } = useNetwork()
+  const client = usePublicClient()
+  const { chain } = useChain(client)
   const [isResolverSet, setIsResolverSet] = useState(false)
   const [isPrimaryNameSet, setIsPrimaryNameSet] = useState(false)
 
@@ -43,38 +44,28 @@ export default function SetPrimaryModal({
     bestDisplayName
   } = normalize(name)
 
-  const nameToSet = nameIsEmpty ? '0x0000000000000000000000000000000000000000' : normalizedName
+  const nameToSet = nameIsEmpty ? AddressZero : normalizedName
 
   const reverseNode = addr ? namehash(addr.toLowerCase().substring(2) + '.addr.reverse') : ''
 
   // Contract write: setName
-  const setName = useContractWrite({
-    ...ensConfig[chain?.id]?.ReverseRegistrar,
-    functionName: isForAddrMode ? 'setNameForAddr' : 'setName',
-    args: isForAddrMode ? [
-      addr,
-      owner,
-      resolver,
-      nameToSet
-    ] : [
-      nameToSet
-    ],
-    overrides: {
-      gasLimit: '150000',
-    },
-    onError: (err) => {
-      toast.error(err.message)
-    },
-  })
+  const setName = useWriteContract()
 
-  // Wait for setName to settle
-  const waitForSetName = useWaitForTransaction({
-    hash: setName?.data?.hash,
-    onSuccess: (data) => {
-      const didFail = data.status === 0
-      if (didFail) {
-        toast.error('Set primary name failed')
-      } else {
+  const setNameWrite = () => {
+    setName.writeContract({
+      ...ensConfig[chain]?.ReverseRegistrar,
+      functionName: isForAddrMode ? 'setNameForAddr' : 'setName',
+      args: isForAddrMode ? [
+        addr,
+        owner,
+        resolver,
+        nameToSet
+      ] : [
+        nameToSet
+      ],
+      gas: 150000n
+    }, {
+      onSuccess: () => {
         toast.success(`Your primary name has been ${nameIsEmpty ? 'cleared' : 'set'}!`)
         setIsPrimaryNameSet(true)
 
@@ -84,86 +75,73 @@ export default function SetPrimaryModal({
             name: normalizedName,
             forAddr: isForAddrMode,
             usingRR: true,
-            network: chain.name
+            network: getChainName(chain)
           }
         })
+      },
+      onError: (err) => {
+        console.error(err)
+        toast.error(err.shortMessage)
       }
-    },
+    })
+  }
+
+  // Wait for setName to settle
+  const waitForSetName = useWaitForTransactionReceipt({
+    hash: setName?.data
   })
 
   // Contract write: setResolver
-  const setResolver = useContractWrite({
-    ...ensConfig[chain?.id]?.Registry,
-    functionName: 'setResolver',
-    args: [
-      reverseNode,
-      resolver
-    ],
-    overrides: {
-      gasLimit: '60000',
-    },
-    onError: (err) => {
-      toast.error(err.message)
-    },
-  })
+  const setResolver = useWriteContract()
 
-  // Wait for setResolver to settle
-  const waitForSetResolver = useWaitForTransaction({
-    hash: setResolver?.data?.hash,
-    onSuccess: (data) => {
-      const didFail = data.status === 0
-      if (didFail) {
-        toast.error('Set resolver failed')
-      } else {
+  const setResolverWrite = () => {
+    setResolver.writeContract({
+      ...ensConfig[chain]?.Registry,
+      functionName: 'setResolver',
+      args: [
+        reverseNode,
+        resolver
+      ],
+      gas: 60000n
+    }, {
+      onSuccess: () => {
         setIsResolverSet(true)
-
+  
         plausible('Set Reverse Resolver', {
           props: {
             node: reverseNode,
             resolver: resolver,
-            network: chain.name
+            network: getChainName(chain)
           }
         })
+      },
+      onError: (err) => {
+        console.error(err)
+        toast.error(err.shortMessage)
       }
-    },
+    })
+  }
+
+  // Wait for setResolver to settle
+  const waitForSetResolver = useWaitForTransactionReceipt({
+    hash: setResolver?.data
   })
 
   // Contract write: resolver.setName
-  const resolverSetName = useContractWrite({
-    address: isValidAddress(reverseRecordResolver) ? reverseRecordResolver : resolver,
-    abi: ['function setName(bytes32 node, string calldata newName) external'],
-    functionName: 'setName',
-    args: [
-      reverseNode,
-      nameToSet
-    ],
-    overrides: {
-      gasLimit: '150000',
-    },
-    onError: (err) => {
-      let errMsg = 'Error: ' + err.message
-      const index = errMsg.indexOf('[')
-      if (index <= 0) {
-        index = errMsg.indexOf(';')
-      }
-      if (index <= 0) {
-        index = errMsg.indexOf('(')
-      }
-      if (index > 0) {
-        errMsg = errMsg.substring(0, index)
-      }
-      toast.error(errMsg)
-    },
-  })
+  const resolverSetName = useWriteContract()
 
-  // Wait for resolver.setName to settle
-  const waitForResolverSetName = useWaitForTransaction({
-    hash: resolverSetName?.data?.hash,
-    onSuccess: (data) => {
-      const didFail = data.status === 0
-      if (didFail) {
-        toast.error('Set primary name failed')
-      } else {
+  const resolverSetNameWrite = () => {
+    resolverSetName.writeContract({
+      address: isValidAddress(reverseRecordResolver) ? reverseRecordResolver : resolver,
+      abi: ['function setName(bytes32 node, string calldata newName) external'],
+      functionName: 'setName',
+      args: [
+        reverseNode,
+        nameToSet
+      ],
+      gas: 150000n
+    }, {
+      onSuccess: () => {
         toast.success(`Your primary name has been ${nameIsEmpty ? 'cleared' : 'set'}!`)
         setIsPrimaryNameSet(true)
 
@@ -173,14 +151,39 @@ export default function SetPrimaryModal({
             name: normalizedName,
             forAddr: isForAddrMode,
             usingRR: false,
-            network: chain.name
+            network: getChainName(chain)
           }
         })
+      },
+      onError: (err) => {
+        console.error(err)
+        let errMsg = err.shortMessage
+        let index = errMsg.indexOf('[')
+        if (index <= 0) {
+          index = errMsg.indexOf(';')
+        }
+        if (index <= 0) {
+          index = errMsg.indexOf('(')
+        }
+        if (index > 0) {
+          errMsg = errMsg.substring(0, index)
+        }
+        toast.error(errMsg)
       }
-    },
+    })
+  }
+
+  // Wait for resolver.setName to settle
+  const waitForResolverSetName = useWaitForTransactionReceipt({
+    hash: resolverSetName?.data
   })
 
+  const setResolverTx = setResolver
+  const setResolverTxWrite = setResolverWrite
+  const waitForSetResolverTx = waitForSetResolver
+
   const setNameTx = useReverseRegistrar ? setName : resolverSetName
+  const setNameTxWrite = useReverseRegistrar ? setNameWrite : resolverSetNameWrite
   const waitForSetNameTx = useReverseRegistrar ? waitForSetName : waitForResolverSetName
 
   const dismiss = () => {
@@ -237,11 +240,11 @@ export default function SetPrimaryModal({
             >
               Open ENS Manager
             </Button>
-          ) : (setNameTx.data?.hash || (!hasResolver && setResolver.data?.hash)) ? (
+          ) : (setNameTx.data || (!hasResolver && setResolverTx.data)) ? (
             // Link to Etherscan
             <Button
               as="a"
-              href={`https://${chain?.id === goerli.id ? 'goerli.' : chain?.id === sepolia.id ? 'sepolia.' : ''}etherscan.io/tx/${setNameTx.data?.hash || setResolver.data.hash}`}
+              href={`https://${chain === mainnet.id ? '' : getChainName(chain) + '.'}etherscan.io/tx/${setNameTx.data || setResolverTx.data}`}
               target="_blank"
               rel="noreferrer"
             >
@@ -249,7 +252,7 @@ export default function SetPrimaryModal({
             </Button>
           ) : (
             // Show open wallet button
-            <Button shadowless onClick={() => !useReverseRegistrar && !hasResolver ? setResolver.write() : setNameTx.write()} >
+            <Button shadowless onClick={() => !useReverseRegistrar && !hasResolver ? setResolverTxWrite() : setNameTxWrite()} >
               Open Wallet
             </Button>
           )
@@ -280,18 +283,18 @@ export default function SetPrimaryModal({
               {!useReverseRegistrar && !isValidAddress(reverseRecordResolver) &&
                 <StepDot
                   label="Set Resolver"
-                  loading={!setResolver.data}
-                  spinner={waitForSetResolver.isLoading}
-                  success={waitForSetResolver.data?.status === 1}
-                  error={waitForSetResolver.data?.status !== 1}
+                  loading={!setResolverTx.data}
+                  spinner={waitForSetResolverTx.isLoading}
+                  success={waitForSetResolverTx.isSuccess}
+                  error={waitForSetResolverTx.isError}
                 />
               }
               <StepDot
                 label={`${nameIsEmpty ? 'Clear' : 'Set'} Primary Name`}
                 loading={(useReverseRegistrar || hasResolver) && !setNameTx.data}
                 spinner={waitForSetNameTx.isLoading}
-                success={waitForSetNameTx.data?.status === 1}
-                error={(useReverseRegistrar || hasResolver) && waitForSetNameTx.data?.status !== 1}
+                success={waitForSetNameTx.isSuccess}
+                error={(useReverseRegistrar || hasResolver) && waitForSetNameTx.isError}
               />
             </ul>
           </Typography>

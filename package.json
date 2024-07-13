@@ -10,16 +10,15 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@adraffy/ens-normalize": "^1.9.0",
+    "@adraffy/ens-normalize": "^1.10.1",
     "@apollo/client": "^3.7.11",
-    "@ensdomains/thorin": "^0.6.35",
-    "@rainbow-me/rainbowkit": "^0.12.4",
+    "@ensdomains/thorin": "^0.6.44",
+    "@rainbow-me/rainbowkit": "^2.0.0",
+    "@tanstack/react-query": "^5.20.5",
     "big-integer": "^1.6.51",
     "buffer": "^6.0.3",
     "dns-packet": "^5.5.0",
     "dnssec-debugger-exp": "^0.0.2",
-    "ethers": "5.7.2",
-    "ethers-multicall-provider": "^3.0.0",
     "graphql": "^16.6.0",
     "js-sha3": "^0.8.0",
     "next": "^14.1.0",
@@ -28,11 +27,13 @@
     "react-dom": "^18.2.0",
     "react-hot-toast": "^2.4.0",
     "react-progressive-graceful-image": "^0.7.0",
-    "react-transition-state": "^1.1.4",
+    "react-transition-state": "^1.1.5",
+    "sharp": "^0.33.4",
     "styled-components": "^5.3.9",
     "swr": "^2.1.1",
     "usehooks-ts": "^2.9.5",
-    "wagmi": "^0.12.7"
+    "viem": "^2.7.8",
+    "wagmi": "^2.5.7"
   },
   "devDependencies": {
     "@styled-jsx/plugin-sass": "^4.0.2",

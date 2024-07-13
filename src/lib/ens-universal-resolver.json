@@ -47,6 +47,32 @@
     "type": "error"
   },
   {
+    "inputs": [
+      {
+        "internalType": "bytes",
+        "name": "returnData",
+        "type": "bytes"
+      }
+    ],
+    "name": "ResolverError",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ResolverNotContract",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ResolverNotFound",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ResolverWildcardNotSupported",
+    "type": "error"
+  },
+  {
     "anonymous": false,
     "inputs": [
       {
@@ -240,9 +266,21 @@
     "name": "resolve",
     "outputs": [
       {
-        "internalType": "bytes[]",
+        "components": [
+          {
+            "internalType": "bool",
+            "name": "success",
+            "type": "bool"
+          },
+          {
+            "internalType": "bytes",
+            "name": "returnData",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct Result[]",
         "name": "",
-        "type": "bytes[]"
+        "type": "tuple[]"
       },
       {
         "internalType": "address",
@@ -274,9 +312,21 @@
     "name": "resolve",
     "outputs": [
       {
-        "internalType": "bytes[]",
+        "components": [
+          {
+            "internalType": "bool",
+            "name": "success",
+            "type": "bool"
+          },
+          {
+            "internalType": "bytes",
+            "name": "returnData",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct Result[]",
         "name": "",
-        "type": "bytes[]"
+        "type": "tuple[]"
       },
       {
         "internalType": "address",
@@ -332,9 +382,21 @@
     "name": "resolveCallback",
     "outputs": [
       {
-        "internalType": "bytes[]",
+        "components": [
+          {
+            "internalType": "bool",
+            "name": "success",
+            "type": "bool"
+          },
+          {
+            "internalType": "bytes",
+            "name": "returnData",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct Result[]",
         "name": "",
-        "type": "bytes[]"
+        "type": "tuple[]"
       },
       {
         "internalType": "address",

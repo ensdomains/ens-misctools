@@ -6,20 +6,22 @@ import {
   Typography,
 } from '@ensdomains/thorin'
 import StepDot from './stepdot'
-import { ensConfig } from '../lib/constants'
+import { ensConfig, AddressZero } from '../lib/constants'
 import toast from 'react-hot-toast'
 import {
-  useContractWrite,
-  useNetwork,
-  useWaitForTransaction,
+  usePublicClient,
+  useWriteContract,
+  useWaitForTransactionReceipt,
 } from 'wagmi'
-import { goerli, sepolia } from '@wagmi/core/chains'
-import { ethers } from 'ethers'
+import { mainnet } from '@wagmi/core/chains'
+import { encodeAbiParameters } from 'viem'
 import {
   normalize,
   parseName,
-  encodeMethodData
+  encodeMethodData,
+  getChainName
 } from '../lib/utils'
+import { useChain } from '../hooks/misc'
 import { usePlausible } from 'next-plausible'
 
 export default function SetRecordsModal({
@@ -31,7 +33,8 @@ export default function SetRecordsModal({
   setIsOpen,
 }) {
   const plausible = usePlausible()
-  const { chain } = useNetwork()
+  const client = usePublicClient()
+  const { chain } = useChain(client)
   const [isDone, setIsDone] = useState(false)
 
   const {
@@ -48,8 +51,8 @@ export default function SetRecordsModal({
 
   let validEthAddress = true
   if (ethAddress) {
-    if (ethers.utils.isAddress(ethAddress)) {
-      data.push(encodeMethodData('setAddr(bytes32,address)', ethers.utils.defaultAbiCoder.encode(['bytes32', 'address'], [node, ethAddress])))
+    if (isAddress(ethAddress)) {
+      data.push(encodeMethodData('setAddr(bytes32,address)', encodeAbiParameters([{name: 'node', type: 'bytes32'}, {name: 'a', type: 'address'}], [node, ethAddress]), 'hex'))
     } else {
       validEthAddress = false
     }
@@ -63,7 +66,7 @@ export default function SetRecordsModal({
   for (let i in records) {
     if (records[i].key) {
       if (!recordsObj[records[i].key]) {
-        data.push(encodeMethodData('setText(bytes32,string,string)', ethers.utils.defaultAbiCoder.encode(['bytes32', 'string', 'string'], [node, records[i].key, records[i].value])))
+        data.push(encodeMethodData('setText(bytes32,string,string)', encodeAbiParameters([{name: 'node', type: 'bytes32'}, {name: 'key', type: 'string'}, {name: 'value', type: 'string'}], [node, records[i].key, records[i].value]), 'hex'))
         recordsObj[records[i].key] = true
 
         if (records[i].value) {
@@ -82,39 +85,37 @@ export default function SetRecordsModal({
   const validData = validEthAddress && validRecords
 
   // Contract write
-  const writeTx = useContractWrite({
-    address: resolver,
-    abi: ensConfig[chain?.id]?.LatestPublicResolver.abi,
-    functionName: 'multicall',
-    args: [data],
-    // overrides: {
-    //   gasLimit: '60000',
-    // },
-    onError: (err) => {
-      console.error(err)
-      toast.error(err.message)
-    },
-  })
+  const writeTx = useWriteContract()
 
-  // Wait for writeTx to settle
-  const waitForWriteTx = useWaitForTransaction({
-    hash: writeTx?.data?.hash,
-    onSuccess: (data) => {
-      const didFail = data.status === 0
-      if (didFail) {
-        toast.error('Set records failed')
-      } else {
+  const writeTxWrite = () => {
+    writeTx.writeContract({
+      address: resolver,
+      abi: ensConfig[chain]?.LatestPublicResolver.abi,
+      functionName: 'multicall',
+      args: [data],
+      // gas: 60000n
+    }, {
+      onSuccess: () => {
         toast.success(`Records successfully updated!`)
         setIsDone(true)
 
         plausible('Set Records', {
           props: {
             name: normalizedName,
-            network: chain.name
+            network: getChainName(chain)
           }
         })
+      },
+      onError: (err) => {
+        console.error(err)
+        toast.error(err.shortMessage)
       }
-    },
+    })
+  }
+
+  // Wait for writeTx to settle
+  const waitForWriteTx = useWaitForTransactionReceipt({
+    hash: writeTx?.data
   })
 
   const dismiss = () => {
@@ -136,7 +137,7 @@ export default function SetRecordsModal({
           {!isDone && <>
               <Typography>For: {bestDisplayName}</Typography>
               {ethAddress &&
-                <Typography>{ethAddress === ethers.constants.AddressZero ? 'Clearing' : 'Updating'} ETH address</Typography>
+                <Typography>{ethAddress === AddressZero ? 'Clearing' : 'Updating'} ETH address</Typography>
               }
               {numUpdatedRecords > 0 &&
                 <Typography>Updating {numUpdatedRecords} text record{numUpdatedRecords > 1 && 's'}</Typography>
@@ -172,11 +173,11 @@ export default function SetRecordsModal({
             >
               Open ENS Manager
             </Button>
-          ) : writeTx.data?.hash ? (
+          ) : writeTx.data ? (
             // Link to Etherscan
             <Button
               as="a"
-              href={`https://${chain?.id === goerli.id ? 'goerli.' : chain?.id === sepolia.id ? 'sepolia.' : ''}etherscan.io/tx/${writeTx.data?.hash}`}
+              href={`https://${chain === mainnet.id ? '' : getChainName(chain) + '.'}etherscan.io/tx/${writeTx.data}`}
               target="_blank"
               rel="noreferrer"
             >
@@ -184,7 +185,7 @@ export default function SetRecordsModal({
             </Button>
           ) : (
             // Show open wallet button
-            <Button shadowless onClick={() => writeTx.write()} >
+            <Button shadowless onClick={writeTxWrite} >
               Open Wallet
             </Button>
           )
@@ -218,8 +219,8 @@ export default function SetRecordsModal({
                 label={`Set Records (Multicall)`}
                 loading={!writeTx.data}
                 spinner={waitForWriteTx.isLoading}
-                success={waitForWriteTx.data?.status === 1}
-                error={waitForWriteTx.data?.status !== 1}
+                success={waitForWriteTx.isSuccess}
+                error={waitForWriteTx.isError}
               />
             </ul>
           </Typography>

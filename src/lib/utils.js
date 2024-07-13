@@ -1,10 +1,12 @@
 import { keccak_256 } from 'js-sha3'
 import { Buffer } from 'buffer'
-import { ethers } from 'ethers'
 import { ens_normalize, ens_beautify } from '@adraffy/ens-normalize'
+import { AddressZero } from './constants'
 import dnsPacket from 'dns-packet'
 import bigInt from 'big-integer'
 import toast from 'react-hot-toast'
+import * as viem from 'viem'
+import { mainnet, goerli, sepolia, holesky } from '@wagmi/core/chains'
 
 export function namehash(name) {
   // Reject empty names:
@@ -25,8 +27,9 @@ export function namehash(name) {
   return '0x' + node
 }
 
-export function dnsEncode(name) {
-  return dnsPacket.name.encode(name)
+export function dnsEncode(name, format) {
+  const dnsBytes = dnsPacket.name.encode(name)
+  return format === 'hex' ? '0x' + dnsBytes.toString('hex') : dnsBytes
 }
 
 export function encodeMethodData(method, data, format) {
@@ -38,38 +41,62 @@ export function encodeMethodData(method, data, format) {
     data = Buffer.from(data, 'hex')
   }
   const result = Buffer.concat([methodID, data])
-  return format === 'hex' ? result.toString('hex') : result
+  return format === 'hex' ? '0x' + result.toString('hex') : result
 }
 
-export function universalResolveAddr(universalResolver, name, node) {
+export function contractInfo(contract, functionName, ...args) {
+  return {
+    address: contract.address,
+    abi: contract.abi,
+    functionName,
+    args
+  }
+}
+
+export function readContract(client, contract, functionName, ...args) {
+  return client.readContract(contractInfo(contract, functionName, ...args))
+}
+
+export function universalResolveAddrInfo(universalResolver, name, node) {
   if (!node) {
     node = parseName(name).node
   }
-  return universalResolver['resolve(bytes,bytes)'](dnsEncode(name), encodeMethodData('addr(bytes32)', node), {
-    ccipReadEnabled: true
-  }).catch(e => e)
+  return contractInfo(universalResolver, 'resolve', dnsEncode(name, 'hex'), encodeMethodData('addr(bytes32)', node, 'hex'))
 }
 
-export function universalResolveAvatar(universalResolver, name, node) {
-  return universalResolveTextRecord(universalResolver, name, node, 'avatar')
+export function universalResolveAddr(client, universalResolver, name, node) {
+  return client.readContract(universalResolveAddrInfo(universalResolver, name, node)).catch(e => e)
 }
 
-export function universalResolveTextRecord(universalResolver, name, node, key) {
+export function universalResolveAvatarInfo(universalResolver, name, node) {
+  return universalResolveTextRecordInfo(universalResolver, name, node, 'avatar')
+}
+
+export function universalResolveAvatar(client, universalResolver, name, node) {
+  return universalResolveTextRecord(client, universalResolver, name, node, 'avatar')
+}
+
+export function universalResolveTextRecordInfo(universalResolver, name, node, key) {
   if (!node) {
     node = parseName(name).node
   }
 
-  const data = ethers.utils.defaultAbiCoder.encode(['bytes32', 'string'], [node, key])
+  const data = viem.encodeAbiParameters([{name: 'node', type: 'bytes32'}, {name: 'key', type: 'string'}], [node, key])
 
-  return universalResolver['resolve(bytes,bytes)'](dnsEncode(name), encodeMethodData('text(bytes32,string)', data), {
-    ccipReadEnabled: true
-  }).catch(e => e)
+  return contractInfo(universalResolver, 'resolve', dnsEncode(name, 'hex'), encodeMethodData('text(bytes32,string)', data, 'hex'))
 }
 
-export function universalResolvePrimaryName(universalResolver, address) {
-  return universalResolver['reverse(bytes)'](dnsEncode(address.toLowerCase().substring(2) + '.addr.reverse'), {
-    ccipReadEnabled: true
-  }).catch(e => e)
+export function universalResolveTextRecord(client, universalResolver, name, node, key) {
+  return client.readContract(universalResolveTextRecordInfo(universalResolver, name, node, key)).catch(e => e)
+}
+
+export function universalResolvePrimaryNameInfo(universalResolver, address) {
+  const reverseName = dnsEncode(address.toLowerCase().substring(2) + '.addr.reverse', 'hex')
+  return contractInfo(universalResolver, 'reverse', reverseName)
+}
+
+export function universalResolvePrimaryName(client, universalResolver, address) {
+  return client.readContract(universalResolvePrimaryNameInfo(universalResolver, address)).catch(e => e)
 }
 
 export function getUniversalResolverPrimaryName(address, result) {
@@ -85,7 +112,7 @@ export function convertToAddress(bytes) {
     if (bytes && typeof bytes === 'string' && bytes.indexOf('0x') === 0 && bytes.length > 66) { 
       return ''
     }
-    return getAddress(ethers.utils.defaultAbiCoder.decode(['address'], bytes)[0])
+    return viem.decodeAbiParameters([{type: 'address'}], bytes)[0]
   } catch (e) {
     console.error(e)
     return ''
@@ -95,14 +122,38 @@ export function convertToAddress(bytes) {
 export function getAddress(address) {
   if (address) {
     try {
-      address = ethers.utils.getAddress(address)
+      address = viem.getAddress(address)
     } catch (e) {}
   }
   return address
 }
 
+export function isAddress(address) {
+  return viem.isAddress(address)
+}
+
 export function isValidAddress(address) {
-  return ethers.utils.isAddress(address) && address != ethers.constants.AddressZero
+  return isAddress(address) && address != AddressZero
+}
+
+export function getMulticallResult(result, throwIfError) {
+  if ((!result && typeof result !== 'boolean') || result instanceof Error || (result.status && result.status !== 'success')) {
+    if (!(result instanceof Error)) {
+      if (!result || !result.status) {
+        result = new Error(`Unknown error occurred. Result: ${result}`)
+      } else if (result.error instanceof Error) {
+        result = result.error
+      } else {
+        result = new Error(`Unknown error occurred. Status: ${result.status}, Error: ${result.error}`)
+      }
+    }
+    if (throwIfError) {
+      throw result
+    } else {
+      return result
+    }
+  }
+  return result.result || result
 }
 
 export function normalize(name) {
@@ -114,18 +165,20 @@ export function normalize(name) {
   let normalizationError = ''
   let bestDisplayName = name
 
-  try {
-    normalizedName = ens_normalize(name)
-    bestDisplayName = normalizedName
-    isNameValid = true
-    isNameNormalized = name === normalizedName
-    beautifiedName = ens_beautify(normalizedName)
-    nameNeedsBeautification = normalizedName !== beautifiedName
-    if (nameNeedsBeautification) {
-      bestDisplayName = beautifiedName
+  if (name) {
+    try {
+      normalizedName = ens_normalize(name)
+      bestDisplayName = normalizedName
+      isNameValid = true
+      isNameNormalized = name === normalizedName
+      beautifiedName = ens_beautify(normalizedName)
+      nameNeedsBeautification = normalizedName !== beautifiedName
+      if (nameNeedsBeautification) {
+        bestDisplayName = beautifiedName
+      }
+    } catch (e) {
+      normalizationError = e.toString()
     }
-  } catch (e) {
-    normalizationError = e.toString()
   }
 
   return {
@@ -219,7 +272,7 @@ export function abbreviatedAddr(address) {
 }
 
 export function hasExpiry(expirySeconds) {
-  return expirySeconds && expirySeconds > 0 && expirySeconds <= 8640000000000
+  return expirySeconds && expirySeconds > 0n && expirySeconds <= 8640000000000n
 }
 
 export function parseExpiry(expirySeconds) {
@@ -234,7 +287,7 @@ export function parseExpiry(expirySeconds) {
       year: 'numeric',
       timeZoneName: 'short',
     })
-    return formatter.format(new Date(expirySeconds * 1000))
+    return formatter.format(new Date(Number(expirySeconds * 1000n)))
   } else {
     return 'None'
   }
@@ -247,6 +300,18 @@ export async function copyToClipBoard(text) {
   } catch (err) {
     console.error('Failed to copy text: ', err)
     toast.error('Failed to copy to clipboard')
+  }
+}
+
+export function getChainName(chainId) {
+  if (chainId === mainnet.id) {
+    return mainnet.name
+  } else if (chainId === goerli.id) {
+    return goerli.name
+  } else if (chainId === sepolia.id) {
+    return sepolia.name
+  } else if (chainId === holesky.id) {
+    return holesky.name
   }
 }
 

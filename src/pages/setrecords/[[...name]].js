@@ -12,22 +12,23 @@ import {
   Helper,
   Banner
 } from '@ensdomains/thorin'
-import { useAccount, useProvider } from 'wagmi'
-import { goerli, sepolia } from '@wagmi/core/chains'
-import { ethers } from 'ethers'
-import { MulticallWrapper } from 'ethers-multicall-provider'
+import { usePublicClient, useAccount } from 'wagmi'
+import { getContract } from 'viem'
 import Header from '../../components/header'
 import SetRecordsModal from '../../components/setrecords-modal'
 import toast, { Toaster } from 'react-hot-toast'
-import { ensConfig } from '../../lib/constants'
+import { ensConfig, AddressZero } from '../../lib/constants'
 import {
   validChain,
   normalize,
   parseName,
   getAddress,
   convertToAddress,
+  isAddress,
   isValidAddress,
-  universalResolveAddr
+  universalResolveAddr,
+  readContract,
+  getMulticallResult
 } from '../../lib/utils'
 import { useChain, useDelayedName, useRouterPush, useRouterUpdate } from '../../hooks/misc'
 
@@ -61,18 +62,18 @@ export default function SetRecords() {
   const onNameChange = useRouterPush('/setrecords/', setName)
   useRouterUpdate('/setrecords/', name, onNameChange)
 
-  const provider = useProvider()
+  const client = usePublicClient()
   const { address } = useAccount()
-  const { chain, chains } = useChain(provider)
+  const { chain, chains } = useChain(client)
 
   const getUpdatedEthAddress = (ethAddress, nameData) => {
     if (getAddress(ethAddress) !== getAddress(nameData.ethAddress)) {
       if (ethAddress) {
-        if (ethers.utils.isAddress(ethAddress)) {
+        if (isAddress(ethAddress)) {
           return getAddress(ethAddress)
         }
       } else {
-        return ethers.constants.AddressZero
+        return AddressZero
       }
     }
     return ''
@@ -107,7 +108,7 @@ export default function SetRecords() {
   }
 
   const isDataValid = (ethAddress, textRecords) => {
-    const validEthAddress = !ethAddress || ethers.utils.isAddress(ethAddress)
+    const validEthAddress = !ethAddress || isAddress(ethAddress)
 
     let validRecords = true
     const recordsObj = {}
@@ -159,46 +160,48 @@ export default function SetRecords() {
         } = parseName(normalizedName)
 
         try {
-          const multi = MulticallWrapper.wrap(provider)
           const batch1 = []
 
           // Get registry owner/resolver
-          const registry = new ethers.Contract(ensConfig[chain].Registry?.address, ensConfig[chain].Registry?.abi, multi)
-          batch1.push(registry.owner(node))
-          batch1.push(registry.resolver(node))
+          const registry = getContract({address: ensConfig[chain].Registry?.address, abi: ensConfig[chain].Registry?.abi, client})
+          batch1.push(readContract(client, registry, 'owner', node))
+          batch1.push(readContract(client, registry, 'resolver', node))
 
-          const universalResolver = new ethers.Contract(ensConfig[chain].UniversalResolver?.address, ensConfig[chain].UniversalResolver?.abi, multi)
-          batch1.push(universalResolveAddr(universalResolver, normalizedName, node))
+          const universalResolver = getContract({address: ensConfig[chain].UniversalResolver?.address, abi: ensConfig[chain].UniversalResolver?.abi, client})
+          batch1.push(universalResolveAddr(client, universalResolver, normalizedName, node))
 
           const nameWrapperAddress = ensConfig[chain].NameWrapper?.address
-          const nameWrapper = new ethers.Contract(nameWrapperAddress, ensConfig[chain].NameWrapper?.abi, multi)
-          batch1.push(nameWrapper.getData(wrappedTokenId))
+          const nameWrapper = getContract({address: nameWrapperAddress, abi: ensConfig[chain].NameWrapper?.abi, client})
+          batch1.push(readContract(client, nameWrapper, 'getData', wrappedTokenId))
 
           if (isETH2LD) {
             // Get registrar expiry
-            const ethRegistrar = new ethers.Contract(ensConfig[chain].ETHRegistrar?.address, ensConfig[chain].ETHRegistrar?.abi, multi)
-            batch1.push(ethRegistrar.nameExpires(eth2LDTokenId))
+            const ethRegistrar = getContract({address: ensConfig[chain].ETHRegistrar?.address, abi: ensConfig[chain].ETHRegistrar?.abi, client})
+            batch1.push(readContract(client, ethRegistrar, 'nameExpires', eth2LDTokenId))
           }
 
           const results1 = await Promise.all(batch1)
           let results1Index = 0
 
           // Get registry owner
-          if (isValidAddress(results1[results1Index])) {
-            nameData.registryOwner = getAddress(results1[results1Index])
+          const registryOwnerResult = getMulticallResult(results1[results1Index], true)
+          if (isValidAddress(registryOwnerResult)) {
+            nameData.registryOwner = getAddress(registryOwnerResult)
             nameData.owner = nameData.registryOwner
           }
           results1Index++
 
           // Get registry resolver
-          if (isValidAddress(results1[results1Index])) {
-            nameData.registryResolver = getAddress(results1[results1Index])
+          const registryResolverResult = getMulticallResult(results1[results1Index], true)
+          if (isValidAddress(registryResolverResult)) {
+            nameData.registryResolver = getAddress(registryResolverResult)
           }
           results1Index++
 
           // Get ETH address (possibly via wildcard or offchain)
-          if (results1[results1Index] && !(results1[results1Index] instanceof Error) && results1[results1Index].length > 0) {
-            const ethAddress = convertToAddress(results1[results1Index][0])
+          const urAddrResult = getMulticallResult(results1[results1Index])
+          if (urAddrResult && !(urAddrResult instanceof Error) && urAddrResult.length > 0) {
+            const ethAddress = convertToAddress(urAddrResult[0])
             if (isValidAddress(ethAddress)) {
               nameData.ethAddress = ethAddress
             }
@@ -208,10 +211,10 @@ export default function SetRecords() {
           nameData.isWrapped = nameData.registryOwner === nameWrapperAddress
           if (nameData.isWrapped) {
             // Get wrapped data
-            const data = results1[results1Index]
-            if (data && data.owner) {
-              nameData.wrappedOwner = getAddress(data.owner)
-              nameData.wrappedExpiry = data.expiry
+            const data = getMulticallResult(results1[results1Index], true)
+            if (data && data[0]) {
+              nameData.wrappedOwner = getAddress(data[0])
+              nameData.wrappedExpiry = BigInt(data[2])
 
               nameData.owner = nameData.wrappedOwner
               nameData.expiry = nameData.wrappedExpiry
@@ -221,7 +224,7 @@ export default function SetRecords() {
 
           if (isETH2LD) {
             // Get registrar expiry
-            nameData.eth2LDExpiry = results1[results1Index]
+            nameData.eth2LDExpiry = BigInt(getMulticallResult(results1[results1Index], true))
             nameData.expiry = nameData.eth2LDExpiry
             results1Index++
           }
@@ -244,15 +247,16 @@ export default function SetRecords() {
               if (texts.length > 0) {
                 const batch2 = []
 
-                const resolverContract = new ethers.Contract(nameData.registryResolver, ensConfig[chain].LatestPublicResolver?.abi, multi)
+                const resolverContract = getContract({address: nameData.registryResolver, abi: ensConfig[chain].LatestPublicResolver?.abi, client})
                 for (let i in texts) {
-                  batch2.push(resolverContract.text(node, texts[i]))
+                  batch2.push(readContract(client, resolverContract, 'text', node, texts[i]))
                 }
 
                 const results2 = await Promise.all(batch2)
                 for (let i in texts) {
-                  if (results2[i]) {
-                    nameData.records[texts[i]] = results2[i]
+                  const textResult = getMulticallResult(results2[i], true)
+                  if (textResult) {
+                    nameData.records[texts[i]] = textResult
                   }
                 }
               }
@@ -272,7 +276,7 @@ export default function SetRecords() {
     mappedRecords.push({key:'', value:''})
     setTextRecords(mappedRecords)
     setLoading(false)
-  }, [setEthAddress, setTextRecords, setNameData, setLoading, chain, chains, provider])
+  }, [setEthAddress, setTextRecords, setNameData, setLoading, chain, chains, client])
 
   useEffect(() => {
     getCurrentData(delayedName)
@@ -420,7 +424,7 @@ export default function SetRecords() {
               return toast.error('Name is expired')
             }
 
-            if (ethAddress && !ethers.utils.isAddress(ethAddress)) {
+            if (ethAddress && !isAddress(ethAddress)) {
               return toast.error('ETH address is invalid')
             }
 
@@ -431,25 +435,26 @@ export default function SetRecords() {
             let isApproved = false
 
             try {
-              const multi = MulticallWrapper.wrap(provider)
               const batch1 = []
               
-              const resolverContract = new ethers.Contract(nameData.registryResolver, ensConfig[chain].LatestPublicResolver?.abi, multi)
-              batch1.push(resolverContract.isApprovedForAll(nameData.owner, address).catch(e => e))
-              batch1.push(resolverContract.isApprovedFor(nameData.owner, node, address).catch(e => e))
+              const resolverContract = getContract({address: nameData.registryResolver, abi: ensConfig[chain].LatestPublicResolver?.abi, client})
+              batch1.push(readContract(client, resolverContract, 'isApprovedForAll', nameData.owner, address).catch(e => e))
+              batch1.push(readContract(client, resolverContract, 'isApprovedFor', nameData.owner, node, address).catch(e => e))
 
               const results1 = await Promise.all(batch1)
               let results1Index = 0
 
-              if (!(results1[results1Index] instanceof Error)) {
-                if (results1[results1Index]) {
+              const isApprovedForAllResult = getMulticallResult(results1[results1Index])
+              if (!(isApprovedForAllResult instanceof Error)) {
+                if (isApprovedForAllResult) {
                   isApproved = true
                 }
               }
               results1Index++
 
-              if (!(results1[results1Index] instanceof Error)) {
-                if (results1[results1Index]) {
+              const isApprovedForResult = getMulticallResult(results1[results1Index])
+              if (!(isApprovedForResult instanceof Error)) {
+                if (isApprovedForResult) {
                   isApproved = true
                 }
               }
