@@ -15,8 +15,8 @@ import {
   Spinner,
 } from '@ensdomains/thorin';
 import {
-  useNetwork,
-  useSwitchNetwork,
+  useAccount,
+  useSwitchChain,
   useEnsAddress,
   useEnsResolver,
 } from 'wagmi';
@@ -144,8 +144,8 @@ export default function Page() {
   const refContractEOF = useRef(null);
   const resultCount = Object.keys(result).length;
 
-  const { chain } = useNetwork();
-  const { switchNetwork } = useSwitchNetwork();
+  const { chain } = useAccount();
+  const { switchNetwork } = useSwitchChain();
 
   const { data: ensAddress } = useEnsAddress({
     name: debouncedInput,

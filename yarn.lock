@@ -1495,13 +1495,12 @@
     effect "2.0.0-next.54"
     zod "^3.23.8"
 
-"@tevm/contract@^1.1.0-next.62", "@tevm/contract@^1.1.0-next.97":
-  version "1.1.0-next.97"
-  resolved "https://registry.yarnpkg.com/@tevm/contract/-/contract-1.1.0-next.97.tgz#f1dfb4983885b20376cf07d991a3a306dbead86f"
-  integrity sha512-58bhO7KBU1NCU910CpgaxevLco4p/cKlJ7k3GSjJlxLS+0NKxJNP8ZCp+z0oIyf6QNyfXljRWONepGZcdr8N4Q==
+"@tevm/contract@1.1.0-next.62", "@tevm/contract@^1.1.0-next.62", "@tevm/contract@^1.1.0-next.97":
+  version "1.1.0-next.62"
+  resolved "https://registry.yarnpkg.com/@tevm/contract/-/contract-1.1.0-next.62.tgz#db84942c5d19c47e0a4a3fe7421a07a41f6dd300"
+  integrity sha512-6ovv+fBpPuonPpPbTltrmmE9MrzOZpLwJ+RIs4jwjh6b1ft8ynY59a2RSNNpnTROOk8Jwz6vCnaXvojGpY48JA==
   dependencies:
-    "@tevm/errors" "^1.1.0-next.96"
-    "@tevm/utils" "^1.1.0-next.97"
+    "@tevm/utils" "^1.1.0-next.60"
 
 "@tevm/decorators@^1.1.0-next.62", "@tevm/decorators@^1.1.0-next.98":
   version "1.1.0-next.98"
@@ -3106,10 +3105,10 @@ dnsprovejs-exp@^0.0.1:
     dns-packet "^5.6.1"
     tslog "^4.9.2"
 
-dnssec-debugger-exp@^0.0.2:
-  version "0.0.2"
-  resolved "https://registry.yarnpkg.com/dnssec-debugger-exp/-/dnssec-debugger-exp-0.0.2.tgz#c6f0ac57f9d6df4646bf513067874f30be90e1a3"
-  integrity sha512-eBN2147s98ZOaoE/rQZK7OKiEvD2P9p7wWv7Eh1D4d/FZRKTnSSHTdGigpbEwapuWrqmnhxjGEphG6zSzlWvTQ==
+dnssec-debugger-exp@^0.0.3:
+  version "0.0.3"
+  resolved "https://registry.yarnpkg.com/dnssec-debugger-exp/-/dnssec-debugger-exp-0.0.3.tgz#c89a2e00e72052556449c0b64243bbc8def1a43b"
+  integrity sha512-dcvnkmO1S2OvHCOYt4ryoVg025ZO+TTBCa6G3HDTlTfWNxBGudGuPUBOCLFhmTyXAJPGqEQuDXEWyPZeooekBQ==
   dependencies:
     dnsprovejs-exp "^0.0.1"
     ethers "^6.11.1"

@@ -18,7 +18,7 @@
     "big-integer": "^1.6.51",
     "buffer": "^6.0.3",
     "dns-packet": "^5.5.0",
-    "dnssec-debugger-exp": "^0.0.2",
+    "dnssec-debugger-exp": "^0.0.3",
     "graphql": "^16.6.0",
     "js-sha3": "^0.8.0",
     "next": "^14.1.0",
@@ -45,6 +45,9 @@
     "eslint-config-next": "13.2.4",
     "eslint-plugin-react": "^7.30.1",
     "typescript": "^5.0.2"
+  },
+  "resolutions": {
+    "@tevm/contract": "1.1.0-next.62"
   },
   "volta": {
     "node": "21.6.2"
