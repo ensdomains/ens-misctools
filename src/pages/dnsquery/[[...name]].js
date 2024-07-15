@@ -139,13 +139,12 @@ export default function Page() {
   });
   const [result, setResult] = useState({});
   const [logs, setLogs] = useState({ libLogs: [], contractLogs: [] });
+  const [chain, setChain] = useState(NETWORKS[0])
   const debouncedInput = useDebounce(name, 200);
   const refLibEOF = useRef(null);
   const refContractEOF = useRef(null);
   const resultCount = Object.keys(result).length;
 
-  const { chain } = useAccount();
-  const { switchNetwork } = useSwitchChain();
 
   const { data: ensAddress } = useEnsAddress({
     name: debouncedInput,
@@ -299,6 +298,10 @@ export default function Page() {
     });
   }, [logs.contractLogs]);
 
+  const switchChain = (_id) => {
+    setChain(NETWORKS.filter(({ id }) => id ===_id)[0])
+  }
+
   return (
     <div>
       <div as="main" className="container container--large">
@@ -314,7 +317,7 @@ export default function Page() {
                 value: n.id.toString(),
                 label: n.label,
               }))}
-              onChange={(e) => switchNetwork(Number(e.target.value))}
+              onChange={(e) => switchChain(Number(e.target.value))}
               label="Network"
               value={'1'}
             />
