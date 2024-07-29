@@ -15,8 +15,6 @@ import {
   Spinner,
 } from '@ensdomains/thorin';
 import {
-  useAccount,
-  useSwitchChain,
   useEnsAddress,
   useEnsResolver,
 } from 'wagmi';
@@ -268,7 +266,7 @@ export default function Page() {
           ...prev,
           libLogs: [...prev.libLogs, logContent],
         }));
-        if (logContent.includes('Could not verify')) {
+        if (logContent.includes('Could not') || logContent.includes('Found 0 TXT records')) {
           reportError(logContent, 'lib');
           return;
         }
@@ -338,7 +336,7 @@ export default function Page() {
           }
         >
           <DebugTitle
-            enabled={status.isLoading || !!resultCount || !!status.libError}
+            enabled={status.isLoading || !!resultCount || !!status.libError || !!status.contractError}
           >
             {(status.isLibSuccess || status.libError) && (
               <IconWrapper color={status.libError ? 'red' : 'green'}>
