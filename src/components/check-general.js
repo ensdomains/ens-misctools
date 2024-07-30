@@ -297,8 +297,7 @@ export default function CheckGeneral({
 
         if (chain === mainnet.id) {
           if (isETH) {
-            const nameWithoutDotEth = normalizedName.substring(0, normalizedName.lastIndexOf('.'))
-            links.ensvision = `https://vision.io/name/${nameWithoutDotEth}`
+            links.ensvision = `https://vision.io/name/ens/${normalizedName}`
           }
           if (isETH2LD) {
             links.kodex = `https://kodex.io/marketplace?domain=${normalizedName}`
