@@ -1,5 +1,4 @@
 import styles from '../../styles/SetRecords.module.css'
-import Head from 'next/head'
 import { useState, useEffect, useCallback } from 'react'
 import {
   Button,
@@ -31,6 +30,7 @@ import {
   getMulticallResult
 } from '../../lib/utils'
 import { useChain, useDelayedName, useRouterPush, useRouterUpdate } from '../../hooks/misc'
+import Metadata from '../../components/metadata'
 
 export default function SetRecords() {
   function defaultNameData() {
@@ -356,17 +356,7 @@ export default function SetRecords() {
 
   return (
     <>
-      <Head>
-        <title>ENS Tools - Set Records</title>
-        <link rel="icon" href="/favicon.ico" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="description" content="Set ETH address or text records if you can't use the official manager app"/>
-        <meta property="og:title" content="ENS Tools - Set Records"/>
-        <meta property="og:description" content="Set ETH address or text records if you can't use the official manager app"/>
-        <meta property="og:image" content="https://tools.ens.domains/sharing-setrecords.jpg"/>
-        <meta property="twitter:card" content="summary_large_image"/>
-        <meta property="twitter:creator" content="@serenae_fansubs"/>
-      </Head>
+      <Metadata title="ENS Tools - Set Records" description="Set ETH address or text records if you can't use the official manager app" image="https://tools.ens.domains/sharing-setrecords.jpg"/>
       <Header position="absolute" />
       <div className="container container--flex" style={{marginTop:'5rem'}}>
         <Heading

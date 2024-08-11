@@ -1,5 +1,4 @@
 import styles from '../styles/SetPublicResolverManager.module.css'
-import Head from 'next/head'
 import { useState, useEffect, useCallback } from 'react'
 import {
   Button,
@@ -25,6 +24,7 @@ import {
   getMulticallResult
 } from '../lib/utils'
 import { useChain, useDelayedName } from '../hooks/misc'
+import Metadata from '../components/metadata'
 
 export default function SetPublicResolverManager() {
   const defaultManagerInfo = function() {
@@ -160,17 +160,7 @@ export default function SetPublicResolverManager() {
 
   return (
     <>
-      <Head>
-        <title>ENS Tools - Set Public Resolver Manager</title>
-        <link rel="icon" href="/favicon.ico" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="description" content="Set a separate manager for your wrapped ENS name"/>
-        <meta property="og:title" content="ENS Tools - Set Public Resolver Manager"/>
-        <meta property="og:description" content="Set a separate manager for your wrapped ENS name"/>
-        <meta property="og:image" content="https://tools.ens.domains/sharing-setprmanager.jpg"/>
-        <meta property="twitter:card" content="summary_large_image"/>
-        <meta property="twitter:creator" content="@serenae_fansubs"/>
-      </Head>
+      <Metadata title="ENS Tools - Set Public Resolver Manager" description="Set a separate manager for your wrapped ENS name" image="https://tools.ens.domains/sharing-setprmanager.jpg"/>
       <Header position="absolute" />
       <div className="container container--flex">
         <Heading
