@@ -1,5 +1,4 @@
 import styles from '../../styles/Check.module.css'
-import Head from 'next/head'
 import { useState } from 'react'
 import { Heading, Input, Card, Button } from '@ensdomains/thorin'
 import Header from '../../components/header'
@@ -10,6 +9,7 @@ import CheckSubnames from '../../components/check-subnames'
 import { normalize, parseName } from '../../lib/utils'
 import { useRouterPush, useRouterUpdate, useDelayedName } from '../../hooks/misc'
 import { Toaster } from 'react-hot-toast'
+import Metadata from '../../components/metadata'
 
 export default function Check() {
   const [name, setName] = useState('')
@@ -36,17 +36,7 @@ export default function Check() {
 
   return (
     <>
-      <Head>
-        <title>ENS Tools - Check Name</title>
-        <link rel="icon" href="/favicon.ico" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="description" content="Quick dashboard for normalization, expiry, parent expiry, resolver, wrapped state, and subnames"/>
-        <meta property="og:title" content="ENS Tools - Check Name"/>
-        <meta property="og:description" content="Quick dashboard for normalization, expiry, parent expiry, resolver, wrapped state, and subnames"/>
-        <meta property="og:image" content="https://tools.ens.domains/sharing-check.jpg"/>
-        <meta property="twitter:card" content="summary_large_image"/>
-        <meta property="twitter:creator" content="@serenae_fansubs"/>
-      </Head>
+      <Metadata title="ENS Tools - Check Name" description="Quick dashboard for normalization, expiry, parent expiry, resolver, wrapped state, and subnames" image="https://tools.ens.domains/sharing-check.jpg"/>
       <Header position="absolute" />
       <div className={styles.container}>
         <div className={styles.containerTop}>

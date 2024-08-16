@@ -1,5 +1,4 @@
 import styles from '../../styles/Unwrap.module.css'
-import Head from 'next/head'
 import { useState } from 'react'
 import { Button, Heading, Input } from '@ensdomains/thorin'
 import { useAccount, usePublicClient } from 'wagmi'
@@ -10,6 +9,7 @@ import toast, { Toaster } from 'react-hot-toast'
 import { ensConfig, AddressZero } from '../../lib/constants'
 import { validChain, normalize, parseName, readContract } from '../../lib/utils'
 import { useChain, useDelayedName, useRouterPush, useRouterUpdate } from '../../hooks/misc'
+import Metadata from '../../components/metadata'
 
 export default function Unwrap() {
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -26,17 +26,7 @@ export default function Unwrap() {
 
   return (
     <>
-      <Head>
-        <title>ENS Tools - Unwrap Name</title>
-        <link rel="icon" href="/favicon.ico" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="description" content="Unwrap an ENS name from the Name Wrapper"/>
-        <meta property="og:title" content="ENS Tools - Unwrap Name"/>
-        <meta property="og:description" content="Unwrap an ENS name from the Name Wrapper"/>
-        <meta property="og:image" content="https://tools.ens.domains/sharing-unwrap.jpg"/>
-        <meta property="twitter:card" content="summary_large_image"/>
-        <meta property="twitter:creator" content="@serenae_fansubs"/>
-      </Head>
+      <Metadata title="ENS Tools - Unwrap Name" description="Unwrap an ENS name from the Name Wrapper" image="https://tools.ens.domains/sharing-unwrap.jpg"/>
       <Header position="absolute" />
       <div className="container container--flex">
         <Heading

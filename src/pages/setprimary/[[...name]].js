@@ -1,5 +1,4 @@
 import styles from '../../styles/SetPrimary.module.css'
-import Head from 'next/head'
 import { useState, useEffect, useCallback } from 'react'
 import {
   Button,
@@ -30,6 +29,7 @@ import {
   getMulticallResult
 } from '../../lib/utils'
 import { useChain, useRouterPush, useRouterUpdate, useDelayedName } from '../../hooks/misc'
+import Metadata from '../../components/metadata'
 
 export default function SetPrimary() {
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -181,17 +181,7 @@ export default function SetPrimary() {
 
   return (
     <>
-      <Head>
-        <title>ENS Tools - Set Primary Name</title>
-        <link rel="icon" href="/favicon.ico" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="description" content="Set ENS Primary Name, for contract addresses too"/>
-        <meta property="og:title" content="ENS Tools - Set Primary Name"/>
-        <meta property="og:description" content="Set ENS Primary Name, for contract addresses too"/>
-        <meta property="og:image" content="https://tools.ens.domains/sharing-setprimary.jpg"/>
-        <meta property="twitter:card" content="summary_large_image"/>
-        <meta property="twitter:creator" content="@serenae_fansubs"/>
-      </Head>
+      <Metadata title="ENS Tools - Set Primary Name" description="Set ENS Primary Name, for contract addresses too" image="https://tools.ens.domains/sharing-setprimary.jpg"/>
       <Header position="absolute" />
       <div className="container container--flex">
         <Heading
