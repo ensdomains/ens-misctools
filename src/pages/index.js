@@ -41,6 +41,12 @@ export default function Home() {
           </Link>
           <Typography>Set ETH address or text records if you can&apos;t use the official manager app. Useful if you&apos;re using a separate Public Resolver manager for wrapped names.</Typography>
         </Card>
+         <Card>
+          <Link href="/dnsquery">
+              <div><Image src="/sharing-dnssec.png" alt="DNSSEC Query" width="350" height="175" priority/></div>
+          </Link>
+          <Typography>Query your DNS name to test if DNNSEC support works properly.</Typography>
+        </Card>
       </div>
     </>
   )
