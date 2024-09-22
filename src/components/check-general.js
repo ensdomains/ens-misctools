@@ -159,7 +159,12 @@ export default function CheckGeneral({
             if (data && data[0]) {
               nameData.owner = getAddress(data[0])
               nameData.manager = getAddress(data[0])
-              nameData.expiry = BigInt(data[2])
+
+              const wrappedExpiry = BigInt(data[2])
+              nameData.wrappedExpiry = wrappedExpiry
+              if (!isETH2LD) {
+                nameData.expiry = BigInt(data[2])
+              }
             }
           }
           results1Index++
@@ -344,6 +349,20 @@ export default function CheckGeneral({
           color: 'blueSecondary',
           tooltip: 'This name is wrapped in the ENS Name Wrapper contract.'
         })
+        if (isETH2LD && nameData.expiry !== nameData.wrappedExpiry) {
+          ownerTags.push({
+            value: 'Out of Sync',
+            color: 'redSecondary',
+            tooltip: 'This name\'s expiry is out of sync with the .eth Registrar.',
+            tooltipDialog: <>
+              This name is wrapped in the ENS Name Wrapper contract, but the expiry was extended directly
+              against the old ETHRegistrarController. Because of this, the name is &quot;out of sync&quot;, which
+              is why the wrapped owner/manager shows up as &quot;0x000...&quot;.
+              <br/><br/>
+              To get this name back in sync, extend the expiry again using the <a href={`https://app.ens.domains/${bestDisplayName}`}>official ENS manager app</a>.
+            </>
+          })
+        }
       }
 
       let noResolverSet = false
@@ -535,6 +554,21 @@ export default function CheckGeneral({
             </> : ''
           })
         }
+
+        if (isETH2LD && nameData.isWrapped && nameData.expiry !== nameData.wrappedExpiry) {
+          expiryTags.push({
+            value: 'Out of Sync',
+            color: 'redSecondary',
+            tooltip: 'This name\'s expiry is out of sync with the .eth Registrar.',
+            tooltipDialog: <>
+              This name is wrapped in the ENS Name Wrapper contract, but the expiry was extended directly
+              against the old ETHRegistrarController. Because of this, the name is &quot;out of sync&quot;, which
+              is why the wrapped owner/manager shows up as &quot;0x000...&quot;.
+              <br/><br/>
+              To get this name back in sync, extend the expiry again using the <a href={`https://app.ens.domains/${bestDisplayName}`}>official ENS manager app</a>.
+            </>
+          })
+        }
       }
     }
   }
@@ -649,6 +683,7 @@ function defaultNameData() {
     resolver: '',
     ethAddress: '',
     expiry: 0n,
+    wrappedExpiry: 0n,
     ownerPrimaryName: '',
     managerPrimaryName: '',
     resolverPrimaryName: '',
