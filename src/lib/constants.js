@@ -38,7 +38,7 @@ export const ensConfig = {
       address: '0x8cab227b1162f03b8338331adaad7aadc83b895e',
       abi: universalResolverABI
     },
-    subgraphURL: 'https://gateway-arbitrum.network.thegraph.com/api/9ad5cff64d93ed2c33d1a57b3ec03ea9/subgraphs/id/5XqPmWe6gjyrJtFn9cLy237i4cWw2j9HcUJEXsP5qGtH',
+    subgraphURL: 'https://gateway-arbitrum.network.thegraph.com/api/92a17a755278dc1acccd844ba7f52199/subgraphs/id/5XqPmWe6gjyrJtFn9cLy237i4cWw2j9HcUJEXsP5qGtH',
   },
   [goerli.id]: {
     Registry: {
