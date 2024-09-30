@@ -1,7 +1,7 @@
 import styles from '../styles/Check.module.css'
 import { EthSVG, Heading, Typography, RecordItem, Skeleton } from '@ensdomains/thorin'
 import RecordItemRow from './recorditemrow'
-import { ensConfig, AddressZero } from '../lib/constants'
+import { ensConfig, AddressZero, GracePeriod } from '../lib/constants'
 import {
   validChain,
   normalize,
@@ -349,7 +349,7 @@ export default function CheckGeneral({
           color: 'blueSecondary',
           tooltip: 'This name is wrapped in the ENS Name Wrapper contract.'
         })
-        if (isETH2LD && nameData.expiry !== nameData.wrappedExpiry) {
+        if (isETH2LD && nameData.expiry !== (nameData.wrappedExpiry - GracePeriod)) {
           ownerTags.push({
             value: 'Out of Sync',
             color: 'redSecondary',
@@ -555,7 +555,7 @@ export default function CheckGeneral({
           })
         }
 
-        if (isETH2LD && nameData.isWrapped && nameData.expiry !== nameData.wrappedExpiry) {
+        if (isETH2LD && nameData.isWrapped && nameData.expiry !== (nameData.wrappedExpiry - GracePeriod)) {
           expiryTags.push({
             value: 'Out of Sync',
             color: 'redSecondary',

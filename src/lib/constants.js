@@ -138,3 +138,4 @@ export const ensConfig = {
 }
 
 export const AddressZero = '0x0000000000000000000000000000000000000000'
+export const GracePeriod = 90n * 24n * 60n * 60n
