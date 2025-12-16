@@ -1,7 +1,7 @@
 import styles from '../styles/Check.module.css'
-import { EthSVG, Heading, Typography, RecordItem, Skeleton } from '@ensdomains/thorin'
+import { EthSVG, Heading, Typography } from '@ensdomains/thorin'
 import RecordItemRow from './recorditemrow'
-import { ensConfig, AddressZero, GracePeriod } from '../lib/constants'
+import { ensConfig, AddressZero, GracePeriod, RESOLVER_ADDRESSES } from '../lib/constants'
 import {
   validChain,
   normalize,
@@ -31,13 +31,23 @@ import Link from 'next/link'
 import Image from 'next/image'
 import ProgressiveImage from "react-progressive-graceful-image"
 
+// Reusable constant for resolver address list in tooltips
+const RESOLVER_ADDRESS_LIST = (
+  <>
+    <strong>Public Resolver Addresses:</strong>
+    <br/>• Latest: {RESOLVER_ADDRESSES.LATEST}
+    <br/>• Old: {RESOLVER_ADDRESSES.OLD}
+    <br/>• Older: {RESOLVER_ADDRESSES.OLDER}
+    <br/>• Oldest: {RESOLVER_ADDRESSES.OLDEST}
+  </>
+)
+
 export default function CheckGeneral({
   name
 }) {
   const [nameData, setNameData] = useState(defaultNameData())
   const client = usePublicClient()
   const { chain, chains, hasClient, isChainSupported } = useChain(client)
-  const [avatarLoadingErrors, setAvatarLoadingErrors] = useState({})
   const [imageLoadingErrors, setImageLoadingErrors] = useState({})
 
   const doUpdate = async ({name, chain}) => {
@@ -260,22 +270,16 @@ export default function CheckGeneral({
 
   const links = {
     ens: '',
-    ensvision: '',
     etherscan: '',
     etherscan2: '',
     opensea: '',
     looksrare: '',
-    x2y2: '',
-    rarible: '',
-    kodex: ''
+    grails: ''
   }
 
   let nftMetadataLink = ''
   let nftMetadataImage = ''
   let isNameExpired = false
-
-  let isNFTAvatar = false
-  let avatarNFTCheckerLink = ''
 
   if (!showLoading && validChain(chain, chains)) {
     const {
@@ -301,26 +305,12 @@ export default function CheckGeneral({
       labelhashHex = labelhash
       labelhashDec = labelhashDecimal
 
-      if (nameData.avatar) {
-        const matches = /eip155:1\/(erc1155|erc721):(0x[0-9a-f]{40})\/(\d+)/i.exec(nameData.avatar)
-        if (matches && matches.length && matches.length == 4) {
-          isNFTAvatar = true
-          avatarNFTCheckerLink = `https://nftchecker.io/?contract=${matches[2]}&token=${matches[3]}`
-        }
-      }
-
       links.ens = `https://app.ens.domains/${bestDisplayName}`
       if (isETH2LD || nameData.isWrapped) {
         const contractAddr = nameData.isWrapped ? ensConfig[chain].NameWrapper.address : ensConfig[chain].ETHRegistrar.address
         const tokenId = nameData.isWrapped ? wrappedTokenId : eth2LDTokenId
 
         if (chain === mainnet.id) {
-          if (isETH) {
-            links.ensvision = `https://vision.io/name/ens/${normalizedName}`
-          }
-          if (isETH2LD) {
-            links.kodex = `https://kodex.io/marketplace?domain=${normalizedName}`
-          }
           if (nameData.manager) {
             links.etherscan = `https://etherscan.io/nft/${contractAddr}/${tokenId}`
             if (isETH2LD && nameData.isWrapped) {
@@ -329,8 +319,7 @@ export default function CheckGeneral({
             }
             links.opensea = `https://opensea.io/assets/ethereum/${contractAddr}/${tokenId}`
             links.looksrare = `https://looksrare.org/collections/${contractAddr}/${tokenId}`
-            links.x2y2 = `https://x2y2.io/eth/${contractAddr}/${tokenId}`
-            links.rarible = `https://rarible.com/token/${contractAddr}:${tokenId}`
+            links.grails = `https://grails.app/${bestDisplayName}`
 
             nftMetadataLink = `https://metadata.ens.domains/mainnet/${contractAddr}/${tokenId}`
             nftMetadataImage = `https://metadata.ens.domains/mainnet/${contractAddr}/${tokenId}/image`
@@ -403,11 +392,85 @@ export default function CheckGeneral({
           lpResolver = publicResolvers[0]
         }
 
-        if (nameData.resolver === lpResolver) {
+        const resolverLower = nameData.resolver.toLowerCase()
+
+        if (resolverLower === RESOLVER_ADDRESSES.LATEST.toLowerCase()) {
           resolverTags.push({
             value: 'Latest Public Resolver',
             color: 'blueSecondary',
             tooltip: 'This name is using the latest version of the Public Resolver contract.'
+          })
+        } else if (resolverLower === RESOLVER_ADDRESSES.OLD.toLowerCase()) {
+          resolverTags.push({
+            value: 'Old Public Resolver',
+            color: 'yellowSecondary',
+            tooltip: 'This name is using an older version of the Public Resolver contract.',
+            tooltipDialog: <>
+              {(nameData.isWrapped && !nameData.isResolverWrapperAware) ? (<>
+                Your name is currently wrapped, but the resolver you&apos;re using is not &quot;wrapper aware&quot;.
+                This means that the resolver does not correctly recognize you as the owner.
+                <br/><br/>
+                You should upgrade to the latest Public Resolver contract.
+              </>) : (<>
+                This is typically not an issue, your name will continue to resolve to records just fine.
+                {!nameData.isWrapped && !nameData.isResolverWrapperAware && (<>
+                  <br/><br/>
+                  However, if you wrap your name in the Name Wrapper, you will need to also migrate to the latest Public Resolver contract.
+                </>)}
+              </>)}
+              <br/><br/>
+              {RESOLVER_ADDRESS_LIST}
+              <br/><br/>
+              More information here: <a href="https://support.ens.domains/core/records/resolver">Resolver</a>
+            </>
+          })
+        } else if (resolverLower === RESOLVER_ADDRESSES.OLDER.toLowerCase()) {
+          resolverTags.push({
+            value: 'Older Public Resolver',
+            color: 'yellowSecondary',
+            tooltip: 'This name is using an older version of the Public Resolver contract.',
+            tooltipDialog: <>
+              {(nameData.isWrapped && !nameData.isResolverWrapperAware) ? (<>
+                Your name is currently wrapped, but the resolver you&apos;re using is not &quot;wrapper aware&quot;.
+                This means that the resolver does not correctly recognize you as the owner.
+                <br/><br/>
+                You should upgrade to the &apos;Old&apos; or &apos;Latest&apos; Public Resolver contract.
+              </>) : (<>
+                This is typically not an issue, your name will continue to resolve to records just fine.
+                {!nameData.isWrapped && !nameData.isResolverWrapperAware && (<>
+                  <br/><br/>
+                  However, if you wrap your name in the Name Wrapper, you will need to also migrate to the &apos;Old&apos; or &apos;Latest&apos; Public Resolver contract.
+                </>)}
+              </>)}
+              <br/><br/>
+              {RESOLVER_ADDRESS_LIST}
+              <br/><br/>
+              More information here: <a href="https://support.ens.domains/core/records/resolver">Resolver</a>
+            </>
+          })
+        } else if (resolverLower === RESOLVER_ADDRESSES.OLDEST.toLowerCase()) {
+          resolverTags.push({
+            value: 'Oldest Public Resolver',
+            color: 'yellowSecondary',
+            tooltip: 'This name is using the oldest version of the Public Resolver contract.',
+            tooltipDialog: <>
+              {(nameData.isWrapped && !nameData.isResolverWrapperAware) ? (<>
+                Your name is currently wrapped, but the resolver you&apos;re using is not &quot;wrapper aware&quot;.
+                This means that the resolver does not correctly recognize you as the owner.
+                <br/><br/>
+                You should upgrade to the &apos;Older&apos;, &apos;Old&apos;, or &apos;Latest&apos; Public Resolver contract.
+              </>) : (<>
+                This is typically not an issue, your name will continue to resolve to records just fine.
+                {!nameData.isWrapped && !nameData.isResolverWrapperAware && (<>
+                  <br/><br/>
+                  However, if you wrap your name in the Name Wrapper, you will need to also migrate to the &apos;Older&apos;, &apos;Old&apos;, or &apos;Latest&apos; Public Resolver contract.
+                </>)}
+              </>)}
+              <br/><br/>
+              {RESOLVER_ADDRESS_LIST}
+              <br/><br/>
+              More information here: <a href="https://support.ens.domains/core/records/resolver">Resolver</a>
+            </>
           })
         } else if (publicResolvers.length > 0 && publicResolvers.includes(nameData.resolver)) {
           resolverTags.push({
@@ -427,6 +490,8 @@ export default function CheckGeneral({
                   However, if you wrap your name in the Name Wrapper, you will need to also migrate to the latest Public Resolver contract.
                 </>)}
               </>)}
+              <br/><br/>
+              {RESOLVER_ADDRESS_LIST}
               <br/><br/>
               More information here: <a href="https://support.ens.domains/core/records/resolver">Resolver</a>
             </>
@@ -626,15 +691,13 @@ export default function CheckGeneral({
     <>
       <Heading>
         <span style={{marginRight:'1rem'}}>General Info</span>
-        <NFTLink link={links.ens} image="/ens.png" alt="ENS Manager App"/>
-        <NFTLink link={links.ensvision} image="/ensvision.png" alt="ENS.Vision"/>
+        <span style={{marginRight:'0.5rem', fontSize:'0.5em', color:'#9b9ba7'}}>View on:</span>
+        <NFTLink link={links.ens} image="/ens-blue.svg" alt="ENS Manager App"/>
         <NFTLink link={links.etherscan} image="/etherscan.png" alt="Etherscan"/>
         <NFTLink link={links.etherscan2} image="/etherscan.png" alt="Etherscan (Wrapped NFT)"/>
-        <NFTLink link={links.kodex} image="/kodex.png" alt="Kodex"/>
-        <NFTLink link={links.looksrare} image="/looksrare.svg" alt="LooksRare"/>
-        <NFTLink link={links.x2y2} image="/x2y2.svg" alt="X2Y2"/>
         <NFTLink link={links.opensea} image="/opensea.svg" alt="OpenSea"/>
-        <NFTLink link={links.rarible} image="/rarible.png" alt="Rarible"/>
+        <NFTLink link={links.grails} image="/grails.png" alt="grails.app"/>
+        <NFTLink link={links.looksrare} image="/looksrare.svg" alt="LooksRare"/>
       </Heading>
       {!hasClient ? (
         !isChainSupported ? (
@@ -651,34 +714,6 @@ export default function CheckGeneral({
             {graceExpiryStr ? <RecordItemRow loading={showLoading} label="Grace" subLabel="Expiry" value={graceExpiryStr} tags={graceExpiryTags}/> : <></>}
             <RecordItemRow loading={showLoading} label="Resolver" value={nameData.resolver} secondaryValue={nameData.resolverPrimaryName} shortValue={abbreviatedValue(nameData.resolver)} tooltipValue={nameData.resolver} tags={resolverTags}/>
             <RecordItemRow loading={showLoading} label="ETH" icon={<EthSVG/>} value={nameData.ethAddress} secondaryValue={nameData.ethAddressPrimaryName} shortValue={abbreviatedValue(nameData.ethAddress)} tooltipValue={nameData.ethAddress} tags={ethAddressTags}/>
-            {nameData.avatar ? 
-              <tr>
-                <td>
-                  <Skeleton loading={showLoading}>
-                    <div>
-                      <RecordItem keyLabel="Avatar" onClick={async () => {await copyToClipBoard(nameData.avatar)}}>{nameData.avatar.length > 20 ? nameData.avatar.substring(0, 20) + '...' : nameData.avatar}</RecordItem>
-                    </div>
-                  </Skeleton>
-                </td>
-                <td>
-                  {nameData.avatarUrl && avatarLoadingErrors[name] !== true &&
-                    <ProgressiveImage src={nameData.avatarUrl} placeholder="/loading.gif" onError={() => setAvatarLoadingErrors({[name]:true})}>
-                      {(src) => (
-                        /* eslint-disable-next-line @next/next/no-img-element */
-                        <img src={src} alt="Avatar" width="42" height="42"/>
-                      )}
-                    </ProgressiveImage>
-                  }
-                  {isNFTAvatar &&
-                    <Link href={avatarNFTCheckerLink} style={{display:'inline-block', marginRight:'0.5rem'}}>
-                      <div>
-                        <Image src="/nftchecker.png" alt="NFTChecker" title="Click here to check this avatar's NFT on NFTChecker.io" width="42" height="42"/>
-                      </div>
-                    </Link>
-                  }
-                </td>
-              </tr>
-            : <></>}
           </tbody>
         </table>
       )}

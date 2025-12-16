@@ -1,10 +1,15 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-const FRAME_ANCESTORS_HEADER = "frame-ancestors 'self';";
+const PRODUCTION_CSP = "frame-ancestors 'self';";
 
 export function middleware(_req: NextRequest) {
   const res = NextResponse.next();
-  res.headers.set("Content-Security-Policy", FRAME_ANCESTORS_HEADER);
+
+  // Only apply CSP in production - dev mode needs to be unrestricted
+  if (process.env.NODE_ENV === "production") {
+    res.headers.set("Content-Security-Policy", PRODUCTION_CSP);
+  }
+
   return res;
 }
 
