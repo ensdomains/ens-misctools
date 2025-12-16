@@ -319,7 +319,7 @@ export default function CheckGeneral({
             }
             links.opensea = `https://opensea.io/assets/ethereum/${contractAddr}/${tokenId}`
             links.looksrare = `https://looksrare.org/collections/${contractAddr}/${tokenId}`
-            links.grails = `https://grails.app/${bestDisplayName}`
+            links.grails = `https://grails.app/${encodeURIComponent(bestDisplayName)}`
 
             nftMetadataLink = `https://metadata.ens.domains/mainnet/${contractAddr}/${tokenId}`
             nftMetadataImage = `https://metadata.ens.domains/mainnet/${contractAddr}/${tokenId}/image`
