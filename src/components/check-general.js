@@ -9,6 +9,7 @@ import {
   readContract,
   universalResolveAddr,
   universalResolveAvatar,
+  universalResolveTextRecord,
   universalResolvePrimaryName,
   getUniversalResolverPrimaryName,
   convertToAddress,
@@ -41,6 +42,99 @@ const RESOLVER_ADDRESS_LIST = (
     <br/>• Oldest: {RESOLVER_ADDRESSES.OLDEST}
   </>
 )
+
+// Helper function to generate resolver tooltip dialog
+function generateResolverTooltipDialog(isWrapped, isResolverWrapperAware, upgradeTargets) {
+  return (
+    <>
+      {(isWrapped && !isResolverWrapperAware) ? (
+        <>
+          Your name is currently wrapped, but the resolver you&apos;re using is not &quot;wrapper aware&quot;.
+          This means that the resolver does not correctly recognize you as the owner.
+          <br/><br/>
+          You should upgrade to the {upgradeTargets} Public Resolver contract.
+        </>
+      ) : (
+        <>
+          This is typically not an issue, your name will continue to resolve to records just fine.
+          {!isWrapped && !isResolverWrapperAware && (
+            <>
+              <br/><br/>
+              However, if you wrap your name in the Name Wrapper, you will need to also migrate to the {upgradeTargets} Public Resolver contract.
+            </>
+          )}
+        </>
+      )}
+      <br/><br/>
+      {RESOLVER_ADDRESS_LIST}
+      <br/><br/>
+      More information here: <a href="https://support.ens.domains/core/records/resolver">Resolver</a>
+    </>
+  )
+}
+
+// Configuration for different resolver types
+const RESOLVER_CONFIGS = {
+  latest: {
+    value: 'Latest Public Resolver',
+    color: 'blueSecondary',
+    tooltip: 'This name is using the latest version of the Public Resolver contract.',
+    hasDialog: false
+  },
+  old: {
+    value: 'Old Public Resolver',
+    color: 'yellowSecondary',
+    tooltip: 'This name is using an older version of the Public Resolver contract.',
+    hasDialog: true,
+    upgradeTargets: 'latest'
+  },
+  older: {
+    value: 'Older Public Resolver',
+    color: 'yellowSecondary',
+    tooltip: 'This name is using an older version of the Public Resolver contract.',
+    hasDialog: true,
+    upgradeTargets: "'Old' or 'Latest'"
+  },
+  oldest: {
+    value: 'Oldest Public Resolver',
+    color: 'yellowSecondary',
+    tooltip: 'This name is using the oldest version of the Public Resolver contract.',
+    hasDialog: true,
+    upgradeTargets: "'Older', 'Old', or 'Latest'"
+  },
+  noResolver: {
+    value: 'No Resolver Set',
+    color: 'yellowSecondary',
+    tooltip: 'There is no resolver contract set on this name.',
+    hasDialog: true,
+    customDialog: (
+      <>
+        An ENS name will not resolve to any records (such as an ETH address) unless a <a href="https://support.ens.domains/core/records/resolver">Resolver</a> is first set on the name.
+        <br/><br/>
+        If you are trying to set the name as your <a href="https://support.ens.domains/core/records/primary-name">Primary Name</a> and it doesn&apos;t show up in the list, this is why.
+        <br/><br/>
+        First set the Resolver to the default Public Resolver. Then update the ETH address record to the address you want this ENS name to point to.
+        <br/><br/>
+        More information here: <a href="https://support.ens.domains/core/records/resolver">Resolver</a>
+      </>
+    )
+  },
+  custom: {
+    value: 'Custom Resolver',
+    color: 'blueSecondary',
+    tooltip: 'This name is using a custom resolver contract.',
+    hasDialog: true,
+    customDialog: (
+      <>
+        This may be expected if this name is being used in conjunction with a custom project.
+        <br/><br/>
+        However, if you do not recognize this contract, then you can choose to update it to the Latest Public Resolver, and then re-set any records.
+        <br/><br/>
+        More information here: <a href="https://support.ens.domains/core/records/resolver">Resolver</a>
+      </>
+    )
+  }
+}
 
 export default function CheckGeneral({
   name
@@ -76,9 +170,10 @@ export default function CheckGeneral({
           batch1.push(readContract(client, registry, 'owner', node))
           batch1.push(readContract(client, registry, 'resolver', node))
 
-          const universalResolver = getContract({address: ensConfig[chain].UniversalResolver?.address, abi: ensConfig[chain].UniversalResolver?.abi, client})          
+          const universalResolver = getContract({address: ensConfig[chain].UniversalResolver?.address, abi: ensConfig[chain].UniversalResolver?.abi, client})
           batch1.push(universalResolveAddr(client, universalResolver, normalizedName, node))
           batch1.push(universalResolveAvatar(client, universalResolver, normalizedName, node))
+          batch1.push(universalResolveTextRecord(client, universalResolver, normalizedName, node, 'header'))
 
           if (isETH2LD) {
             // Get registrar owner
@@ -131,6 +226,22 @@ export default function CheckGeneral({
                 nameData.avatarUrl = nameData.avatar
               } else {
                 nameData.avatarUrl = `https://metadata.ens.domains/${getChainName(chain)}/avatar/${normalizedName}`
+              }
+            } catch (e) {}
+          }
+          results1Index++
+
+          // Get header text record (possibly via wildcard or offchain)
+          const urHeaderResult = getMulticallResult(results1[results1Index])
+          if (urHeaderResult && !(urHeaderResult instanceof Error) && urHeaderResult.length > 0) {
+            try {
+              nameData.header = decodeAbiParameters([{type: 'string'}], urHeaderResult[0])[0]
+              if (nameData.header) {
+                if (nameData.header.indexOf('http://') === 0 || nameData.header.indexOf('https://') === 0) {
+                  nameData.headerUrl = nameData.header
+                } else {
+                  nameData.headerUrl = `https://metadata.ens.domains/${getChainName(chain)}/header/${normalizedName}`
+                }
               }
             } catch (e) {}
           }
@@ -394,137 +505,47 @@ export default function CheckGeneral({
 
         const resolverLower = nameData.resolver.toLowerCase()
 
+        // Determine resolver type using configuration
+        let resolverConfig = null
+
         if (resolverLower === RESOLVER_ADDRESSES.LATEST.toLowerCase()) {
-          resolverTags.push({
-            value: 'Latest Public Resolver',
-            color: 'blueSecondary',
-            tooltip: 'This name is using the latest version of the Public Resolver contract.'
-          })
+          resolverConfig = RESOLVER_CONFIGS.latest
         } else if (resolverLower === RESOLVER_ADDRESSES.OLD.toLowerCase()) {
-          resolverTags.push({
-            value: 'Old Public Resolver',
-            color: 'yellowSecondary',
-            tooltip: 'This name is using an older version of the Public Resolver contract.',
-            tooltipDialog: <>
-              {(nameData.isWrapped && !nameData.isResolverWrapperAware) ? (<>
-                Your name is currently wrapped, but the resolver you&apos;re using is not &quot;wrapper aware&quot;.
-                This means that the resolver does not correctly recognize you as the owner.
-                <br/><br/>
-                You should upgrade to the latest Public Resolver contract.
-              </>) : (<>
-                This is typically not an issue, your name will continue to resolve to records just fine.
-                {!nameData.isWrapped && !nameData.isResolverWrapperAware && (<>
-                  <br/><br/>
-                  However, if you wrap your name in the Name Wrapper, you will need to also migrate to the latest Public Resolver contract.
-                </>)}
-              </>)}
-              <br/><br/>
-              {RESOLVER_ADDRESS_LIST}
-              <br/><br/>
-              More information here: <a href="https://support.ens.domains/core/records/resolver">Resolver</a>
-            </>
-          })
+          resolverConfig = RESOLVER_CONFIGS.old
         } else if (resolverLower === RESOLVER_ADDRESSES.OLDER.toLowerCase()) {
-          resolverTags.push({
-            value: 'Older Public Resolver',
-            color: 'yellowSecondary',
-            tooltip: 'This name is using an older version of the Public Resolver contract.',
-            tooltipDialog: <>
-              {(nameData.isWrapped && !nameData.isResolverWrapperAware) ? (<>
-                Your name is currently wrapped, but the resolver you&apos;re using is not &quot;wrapper aware&quot;.
-                This means that the resolver does not correctly recognize you as the owner.
-                <br/><br/>
-                You should upgrade to the &apos;Old&apos; or &apos;Latest&apos; Public Resolver contract.
-              </>) : (<>
-                This is typically not an issue, your name will continue to resolve to records just fine.
-                {!nameData.isWrapped && !nameData.isResolverWrapperAware && (<>
-                  <br/><br/>
-                  However, if you wrap your name in the Name Wrapper, you will need to also migrate to the &apos;Old&apos; or &apos;Latest&apos; Public Resolver contract.
-                </>)}
-              </>)}
-              <br/><br/>
-              {RESOLVER_ADDRESS_LIST}
-              <br/><br/>
-              More information here: <a href="https://support.ens.domains/core/records/resolver">Resolver</a>
-            </>
-          })
+          resolverConfig = RESOLVER_CONFIGS.older
         } else if (resolverLower === RESOLVER_ADDRESSES.OLDEST.toLowerCase()) {
-          resolverTags.push({
-            value: 'Oldest Public Resolver',
-            color: 'yellowSecondary',
-            tooltip: 'This name is using the oldest version of the Public Resolver contract.',
-            tooltipDialog: <>
-              {(nameData.isWrapped && !nameData.isResolverWrapperAware) ? (<>
-                Your name is currently wrapped, but the resolver you&apos;re using is not &quot;wrapper aware&quot;.
-                This means that the resolver does not correctly recognize you as the owner.
-                <br/><br/>
-                You should upgrade to the &apos;Older&apos;, &apos;Old&apos;, or &apos;Latest&apos; Public Resolver contract.
-              </>) : (<>
-                This is typically not an issue, your name will continue to resolve to records just fine.
-                {!nameData.isWrapped && !nameData.isResolverWrapperAware && (<>
-                  <br/><br/>
-                  However, if you wrap your name in the Name Wrapper, you will need to also migrate to the &apos;Older&apos;, &apos;Old&apos;, or &apos;Latest&apos; Public Resolver contract.
-                </>)}
-              </>)}
-              <br/><br/>
-              {RESOLVER_ADDRESS_LIST}
-              <br/><br/>
-              More information here: <a href="https://support.ens.domains/core/records/resolver">Resolver</a>
-            </>
-          })
+          resolverConfig = RESOLVER_CONFIGS.oldest
         } else if (publicResolvers.length > 0 && publicResolvers.includes(nameData.resolver)) {
-          resolverTags.push({
-            value: 'Old Public Resolver',
-            color: 'yellowSecondary',
-            tooltip: 'This name is using an older version of the Public Resolver contract.',
-            tooltipDialog: <>
-              {(nameData.isWrapped && !nameData.isResolverWrapperAware) ? (<>
-                Your name is currently wrapped, but the resolver you&apos;re using is not &quot;wrapper aware&quot;.
-                This means that the resolver does not correctly recognize you as the owner.
-                <br/><br/>
-                You should upgrade to the latest Public Resolver contract.
-              </>) : (<>
-                This is typically not an issue, your name will continue to resolve to records just fine.
-                {!nameData.isWrapped && !nameData.isResolverWrapperAware && (<>
-                  <br/><br/>
-                  However, if you wrap your name in the Name Wrapper, you will need to also migrate to the latest Public Resolver contract.
-                </>)}
-              </>)}
-              <br/><br/>
-              {RESOLVER_ADDRESS_LIST}
-              <br/><br/>
-              More information here: <a href="https://support.ens.domains/core/records/resolver">Resolver</a>
-            </>
-          })
+          resolverConfig = RESOLVER_CONFIGS.old
         } else if (nameData.resolver === AddressZero) {
           noResolverSet = true
-          resolverTags.push({
-            value: 'No Resolver Set',
-            color: 'yellowSecondary',
-            tooltip: 'There is no resolver contract set on this name.',
-            tooltipDialog: <>
-              An ENS name will not resolve to any records (such as an ETH address) unless a <a href="https://support.ens.domains/core/records/resolver">Resolver</a> is first set on the name.
-              <br/><br/>
-              If you are trying to set the name as your <a href="https://support.ens.domains/core/records/primary-name">Primary Name</a> and it doesn&apos;t show up in the list, this is why.
-              <br/><br/>
-              First set the Resolver to the default Public Resolver. Then update the ETH address record to the address you want this ENS name to point to.
-              <br/><br/>
-              More information here: <a href="https://support.ens.domains/core/records/resolver">Resolver</a>
-            </>
-          })
+          resolverConfig = RESOLVER_CONFIGS.noResolver
         } else {
-          resolverTags.push({
-            value: 'Custom Resolver',
-            color: 'blueSecondary',
-            tooltip: 'This name is using a custom resolver contract.',
-            tooltipDialog: <>
-              This may be expected if this name is being used in conjunction with a custom project.
-              <br/><br/>
-              However, if you do not recognize this contract, then you can choose to update it to the Latest Public Resolver, and then re-set any records.
-              <br/><br/>
-              More information here: <a href="https://support.ens.domains/core/records/resolver">Resolver</a>
-            </>
-          })
+          resolverConfig = RESOLVER_CONFIGS.custom
+        }
+
+        // Build resolver tag using configuration
+        if (resolverConfig) {
+          const tag = {
+            value: resolverConfig.value,
+            color: resolverConfig.color,
+            tooltip: resolverConfig.tooltip
+          }
+
+          if (resolverConfig.hasDialog) {
+            if (resolverConfig.customDialog) {
+              tag.tooltipDialog = resolverConfig.customDialog
+            } else if (resolverConfig.upgradeTargets) {
+              tag.tooltipDialog = generateResolverTooltipDialog(
+                nameData.isWrapped,
+                nameData.isResolverWrapperAware,
+                resolverConfig.upgradeTargets
+              )
+            }
+          }
+
+          resolverTags.push(tag)
         }
 
         if (!nameData.registryResolver) {
@@ -714,6 +735,8 @@ export default function CheckGeneral({
             {graceExpiryStr ? <RecordItemRow loading={showLoading} label="Grace" subLabel="Expiry" value={graceExpiryStr} tags={graceExpiryTags}/> : <></>}
             <RecordItemRow loading={showLoading} label="Resolver" value={nameData.resolver} secondaryValue={nameData.resolverPrimaryName} shortValue={abbreviatedValue(nameData.resolver)} tooltipValue={nameData.resolver} tags={resolverTags}/>
             <RecordItemRow loading={showLoading} label="ETH" icon={<EthSVG/>} value={nameData.ethAddress} secondaryValue={nameData.ethAddressPrimaryName} shortValue={abbreviatedValue(nameData.ethAddress)} tooltipValue={nameData.ethAddress} tags={ethAddressTags}/>
+            <RecordItemRow loading={showLoading} label="Avatar" value={nameData.avatar} shortValue={nameData.avatar && nameData.avatar.length > 30 ? nameData.avatar.substring(0, 27) + '...' : nameData.avatar} tooltipValue={nameData.avatar} rightIcon={<Link href="https://raffy.antistupid.com/eth/nft.html" target="_blank" rel="noopener noreferrer"><Image src="/raffy.ico" alt="Raffy NFT Viewer" width="22" height="22" style={{cursor: 'pointer'}}/></Link>}/>
+            <RecordItemRow loading={showLoading} label="Header" value={nameData.header} shortValue={nameData.header && nameData.header.length > 30 ? nameData.header.substring(0, 27) + '...' : nameData.header} tooltipValue={nameData.header}/>
           </tbody>
         </table>
       )}
@@ -732,16 +755,26 @@ export default function CheckGeneral({
               <RecordItemRow loading={showLoading} label="Labelhash" subLabel="Hexadecimal" value={labelhashHex} shortValue={abbreviatedValue(labelhashHex)} secondaryLabel="Labelhash" secondarySubLabel="Decimal" secondaryValue={labelhashDec} secondaryShortValue={abbreviatedValue(labelhashDec)} secondaryIcon={false} secondaryInline={false}/>
             </tbody>
           </table>
-          {nftMetadataLink && 
+        </div>
+        <div style={{display: 'flex', flexWrap: 'wrap', gap: '1rem', marginTop: '1rem'}}>
+          {nameData.headerUrl && (
+            <ProgressiveImage src={nameData.headerUrl} placeholder="/loading-name.png" onError={() => setImageLoadingErrors({[name + '-header']:true})}>
+              {(src) => (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img src={src} alt="ENS Header Image" style={{width: '396px', height: '132px', objectFit: 'cover', display: 'block'}}/>
+              )}
+            </ProgressiveImage>
+          )}
+          {nftMetadataLink &&
             <Link href={nftMetadataLink}>
               <div>
                 {name && imageLoadingErrors[name] === true ? (
-                  <Image src={isNameExpired ? "/name-expired.jpg" : "/error-loading-nft-image.jpg"} alt="ENS NFT Image" width="132" height="132" style={{marginLeft:'1rem'}}/>
+                  <Image src={isNameExpired ? "/name-expired.jpg" : "/error-loading-nft-image.jpg"} alt="ENS NFT Image" width="132" height="132"/>
                 ) : (
                   <ProgressiveImage src={nftMetadataImage} placeholder="/loading-name.png" onError={() => setImageLoadingErrors({[name]:true})}>
                     {(src) => (
                       /* eslint-disable-next-line @next/next/no-img-element */
-                      <img src={src} alt="ENS NFT Image" width="132" height="132" style={{marginLeft:'1rem'}}/>
+                      <img src={src} alt="ENS NFT Image" width="132" height="132"/>
                     )}
                   </ProgressiveImage>
                 )}
@@ -775,6 +808,10 @@ function defaultNameData() {
     registryResolver: '',
     resolver: '',
     ethAddress: '',
+    avatar: '',
+    avatarUrl: '',
+    header: '',
+    headerUrl: '',
     expiry: 0n,
     wrappedExpiry: 0n,
     ownerPrimaryName: '',
