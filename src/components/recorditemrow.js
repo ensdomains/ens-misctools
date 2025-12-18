@@ -96,7 +96,8 @@ export default function RecordItemRow({
   secondaryIcon,
   secondaryInline,
   tags,
-  indent
+  indent,
+  rightIcon
 }) {
   const getIcon = (icon, color) => {
     return icon || (containsIgnoreCase(color, 'red') ? <CrossCircleSVG/> : containsIgnoreCase(color, 'green') ? <CheckCircleSVG/> : <InfoCircleSVG/>)
@@ -154,6 +155,7 @@ export default function RecordItemRow({
                 />
               )
             })}
+            {rightIcon && <div style={{display: 'inline-block', marginLeft: '0.5rem'}}>{rightIcon}</div>}
           </div>
         </div>
       </td>

@@ -26,12 +26,13 @@ export const ensConfig = {
       abi: reverseRegistrarABI,
     },
     publicResolvers: [
-      '0x231b0Ee14048e9dCcD1d247744d114a4EB5E8E63',
-      '0x4976fb03C32e5B8cfe2b6cCB31c09Ba78EBaBa41',
-      '0xDaaF96c344f63131acadD0Ea35170E7892d3dfBA'
+      '0xF29100983E058B709F3D539b0c765937B804AC15', // Latest
+      '0x231b0Ee14048e9dCcD1d247744d114a4EB5E8E63', // Old
+      '0x4976fb03C32e5B8cfe2b6cCB31c09Ba78EBaBa41', // Older
+      '0xDaaF96c344f63131acadD0Ea35170E7892d3dfBA'  // Oldest
     ],
     LatestPublicResolver: {
-      address: '0x231b0Ee14048e9dCcD1d247744d114a4EB5E8E63',
+      address: '0xF29100983E058B709F3D539b0c765937B804AC15',
       abi: latestPublicResolverABI,
     },
     UniversalResolver: {
@@ -139,3 +140,11 @@ export const ensConfig = {
 
 export const AddressZero = '0x0000000000000000000000000000000000000000'
 export const GracePeriod = 90n * 24n * 60n * 60n
+
+// Public Resolver Versions
+export const RESOLVER_ADDRESSES = {
+  LATEST: '0xF29100983E058B709F3D539b0c765937B804AC15',
+  OLD: '0x231b0Ee14048e9dCcD1d247744d114a4EB5E8E63',
+  OLDER: '0x4976fb03C32e5B8cfe2b6cCB31c09Ba78EBaBa41',
+  OLDEST: '0xDaaF96c344f63131acadD0Ea35170E7892d3dfBA'
+}

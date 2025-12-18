@@ -27,7 +27,7 @@
     "react-hot-toast": "^2.4.0",
     "react-progressive-graceful-image": "^0.7.0",
     "react-transition-state": "^1.1.5",
-    "sharp": "^0.33.4",
+    "sharp": "^0.34.4",
     "styled-components": "^5.3.9",
     "swr": "^2.1.1",
     "viem": "^2.7.8",

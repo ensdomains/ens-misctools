@@ -11,9 +11,9 @@ const resources = [
 ].join(' ');
 
 const cspContent =
-    process.env.NODE_ENV === 'production'
-        ? `worker-src 'self'; script-src 'self' 'sha256-UyYcl+sKCF/ROFZPHBlozJrndwfNiC5KT5ZZfup/pPc=' ${resources} 'wasm-unsafe-eval';`
-        : "script-src 'self'";
+    process.env.NODE_ENV === 'development'
+        ? "script-src 'self' 'unsafe-eval' 'unsafe-inline'"
+        : `worker-src 'self'; script-src 'self' 'sha256-UyYcl+sKCF/ROFZPHBlozJrndwfNiC5KT5ZZfup/pPc=' ${resources} 'wasm-unsafe-eval';`;
 
 export default function Metadata({ title, description, image }) {
     return (

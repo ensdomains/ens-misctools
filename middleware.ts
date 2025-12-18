@@ -1,10 +1,15 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-const FRAME_ANCESTORS_HEADER = "frame-ancestors 'self';";
+const CSP = "frame-ancestors 'self';";
 
 export function middleware(_req: NextRequest) {
   const res = NextResponse.next();
-  res.headers.set("Content-Security-Policy", FRAME_ANCESTORS_HEADER);
+
+  // Skip CSP only in local development
+  if (process.env.NODE_ENV !== "development") {
+    res.headers.set("Content-Security-Policy", CSP);
+  }
+
   return res;
 }
 
