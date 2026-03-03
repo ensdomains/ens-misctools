@@ -15,10 +15,10 @@ const config = getDefaultConfig({
   ssr: true,
   chains: [mainnet, goerli, sepolia, holesky],
   transports: {
-    [mainnet.id]: http('https://mainnet.infura.io/v3/535efce550bd42cf996a56d827d3a951'),
+    [mainnet.id]: http('https://lb.drpc.live/ethereum/AnmpasF2C0JBqeAEzxVO8aSAoRDxF1oR8ZxWtuZZzRRv'),
     [goerli.id]: http(),
-    [sepolia.id]: http('https://sepolia.infura.io/v3/535efce550bd42cf996a56d827d3a951'),
-    [holesky.id]: http('https://holesky.infura.io/v3/535efce550bd42cf996a56d827d3a951'),
+    [sepolia.id]: http('https://lb.drpc.live/sepolia/AnmpasF2C0JBqeAEzxVO8aSAoRDxF1oR8ZxWtuZZzRRv'),
+    [holesky.id]: http('https://lb.drpc.live/holesky/AnmpasF2C0JBqeAEzxVO8aSAoRDxF1oR8ZxWtuZZzRRv'),
   },
 })
 
