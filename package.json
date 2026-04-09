@@ -31,7 +31,7 @@
     "sharp": "^0.33.4",
     "styled-components": "^5.3.9",
     "swr": "^2.1.1",
-    "viem": "^2.35.0",
+    "viem": "^2.47.10",
     "wagmi": "^2.5.7"
   },
   "devDependencies": {
